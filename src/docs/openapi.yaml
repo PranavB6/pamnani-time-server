@@ -9,9 +9,8 @@ paths:
     post:
       operationId: "verify-credentials"
       description: ""
-      parameters:
-        - $ref: "#/components/parameters/Username"
-        - $ref: "#/components/parameters/Password"
+      security:
+        - BasicAuth: []
       responses:
         "200":
           description: OK
@@ -65,9 +64,8 @@ paths:
     get:
       description: "Get user's timesheet"
       operationId: "get-timesheet"
-      parameters:
-        - $ref: "#/components/parameters/Username"
-        - $ref: "#/components/parameters/Password"
+      security:
+        - BasicAuth: []
       responses:
         "200":
           description: OK
@@ -148,9 +146,8 @@ paths:
     post:
       description: "Create a new timesheet record"
       operationId: "create-timesheet-record"
-      parameters:
-        - $ref: "#/components/parameters/Username"
-        - $ref: "#/components/parameters/Password"
+      security:
+        - BasicAuth: []
       requestBody:
         content:
           application/json:
@@ -250,21 +247,10 @@ paths:
                         code: 401
 
 components:
-  parameters:
-    Username:
-      name: "username"
-      in: "header"
-      description: "Username"
-      required: true
-      schema:
-        type: string
-    Password:
-      name: "password"
-      in: "header"
-      description: "Password"
-      required: true
-      schema:
-        type: string
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
   schemas:
     ClientTimesheetRecord:
       type: object

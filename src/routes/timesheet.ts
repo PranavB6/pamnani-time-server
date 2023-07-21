@@ -5,20 +5,27 @@ import PamnaniSheetsApi from "../db/pamnaniSheetsApi";
 import auth from "../middlewares/auth";
 import { clientTimesheetRecordSchema } from "../models/clientTimesheetRecord";
 import StatusCodes from "../models/statusCodes";
+import type UserCredentialsRecord from "../models/userCredentialsRecord";
 import calculateTotalTime from "../utils/calculateTotalTime";
 import expressAsyncHandler from "../utils/expressAsyncHandler";
 import TimesheetRecordConverter from "../utils/timesheetRecordConverter";
+
+interface IResponse extends Response {
+  locals: {
+    user: UserCredentialsRecord;
+  };
+}
 
 const router = Router();
 
 router.get(
   "/",
   auth,
-  expressAsyncHandler(async (req: Request, res: Response) => {
+  expressAsyncHandler(async (req: Request, res: IResponse) => {
     const timesheetRecords = await PamnaniSheetsApi.getTimesheet();
 
     const filteredTimesheet = timesheetRecords.filter((timesheetRecord) => {
-      return timesheetRecord.username === String(req.headers.username);
+      return timesheetRecord.username === String(res.locals.user.username);
     });
 
     const response = filteredTimesheet.map(
@@ -51,11 +58,11 @@ const timesheetRequestSchema = z.object({
 router.post(
   "/",
   auth,
-  expressAsyncHandler(async (req: Request, res: Response) => {
+  expressAsyncHandler(async (req: Request, res: IResponse) => {
     const parsedBody = timesheetRequestSchema.parse(req.body);
 
     const clientTimesheetRecord = clientTimesheetRecordSchema.parse({
-      username: String(req.headers.username),
+      username: String(res.locals.user.username),
       startDatetime: parsedBody.startDatetime,
       endDatetime: parsedBody.endDatetime,
       totalTime: calculateTotalTime(

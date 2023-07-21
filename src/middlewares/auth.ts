@@ -5,15 +5,34 @@ import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
 import { userCredentialsRecordSchema } from "../models/userCredentialsRecord";
 import expressAsyncHandler from "../utils/expressAsyncHandler";
+import logger from "../utils/logger";
 
 async function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
+  const authorizationHeader = req.get("authorization");
+
+  if (authorizationHeader == null) {
+    throw PamnaniError.fromObject({
+      type: "Missing Authorization Header",
+      message: "Authorization header is missing",
+      code: StatusCodes.BAD_REQUEST,
+    });
+  }
+
+  // get the encoded part of the header (ie. remove the "Basic " part)
+  const encoded = authorizationHeader.split(" ")[1];
+  const decoded = Buffer.from(encoded, "base64").toString("utf-8");
+
+  const [username, password] = decoded.split(":");
+
+  logger.info(`Received username: '${username}', password: '${password}'`);
+
   const loginRequest = userCredentialsRecordSchema.parse({
-    username: req.get("username"),
-    password: req.get("password"),
+    username,
+    password,
   });
 
   const userCredentials = await PamnaniSheetsApi.getAllUserCredentials();
@@ -31,6 +50,10 @@ async function authMiddleware(
       code: StatusCodes.UNAUTHORIZED,
     });
   }
+
+  logger.info(`User '${username}' authenticated successfully`);
+
+  res.locals.user = matchingUserRecord;
 
   next();
 }

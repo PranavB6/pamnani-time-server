@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { Router } from "express";
+import { type Request, type Response, Router } from "express";
 import YAML from "yaml";
 
 const openApiSpecPath = path.join(__dirname, "..", "docs", "openapi.yaml");
@@ -10,7 +10,7 @@ const openApiSpecJSON = YAML.parse(openApiSpecFile);
 
 const router = Router();
 
-router.get("/", (req, res) => {
+router.get("/", (req: Request, res: Response) => {
   // send the openapi spec
   res.json(openApiSpecJSON);
 });

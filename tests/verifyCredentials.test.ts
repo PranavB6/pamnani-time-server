@@ -39,10 +39,7 @@ describe("Verify Credentials", function () {
 
     const response = await supertest(createApp())
       .post(verifyCredentialsUrl)
-      .set({
-        username: "Test Username",
-        password: "Test Password",
-      });
+      .auth("Test Username", "Test Password");
 
     expect(response.status).to.be.equal(200);
   });
@@ -57,10 +54,7 @@ describe("Verify Credentials", function () {
 
     const response = await supertest(createApp())
       .post(verifyCredentialsUrl)
-      .set({
-        username: "User C",
-        password: "Password C",
-      });
+      .auth("User B", "Password B");
 
     expect(response.status).to.be.equal(200);
   });
@@ -73,10 +67,7 @@ describe("Verify Credentials", function () {
 
     const response = await supertest(createApp())
       .post(verifyCredentialsUrl)
-      .set({
-        username: "Non-Existent Username",
-        password: "Test Password",
-      });
+      .auth("Non-Existent Username", "Test Password");
 
     expect(response.status).to.be.equal(401);
   });
@@ -89,10 +80,7 @@ describe("Verify Credentials", function () {
 
     const response = await supertest(createApp())
       .post(verifyCredentialsUrl)
-      .set({
-        username: "Test Username",
-        password: "Wrong Password",
-      });
+      .auth("Test Username", "Wrong Password");
 
     expect(response.status).to.be.equal(401);
   });
@@ -105,10 +93,7 @@ describe("Verify Credentials", function () {
 
     const response = await supertest(createApp())
       .post(verifyCredentialsUrl)
-      .set({
-        username: "Non-Existent Username",
-        password: "Invalid Password",
-      });
+      .auth("Non-Existent Username", "Invalid Password");
 
     expect(response.status).to.be.equal(401);
   });
@@ -121,9 +106,7 @@ describe("Verify Credentials", function () {
 
     const response = await supertest(createApp())
       .post(verifyCredentialsUrl)
-      .set({
-        password: "Test Password",
-      });
+      .auth("", "Test Password");
 
     expect(response.status).to.be.equal(400);
   });
@@ -136,9 +119,7 @@ describe("Verify Credentials", function () {
 
     const response = await supertest(createApp())
       .post(verifyCredentialsUrl)
-      .set({
-        username: "Test Username",
-      });
+      .auth("Test Username", "");
 
     expect(response.status).to.be.equal(400);
   });
