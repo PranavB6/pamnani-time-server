@@ -1,37 +1,37 @@
 import { z } from "zod";
 
-const clientTimesheetRecordSchema = z.object({
-  username: z.string({
-    required_error: "Username is required",
-  }),
+const clientClockInRequestSchema = z.object({
   startDatetime: z
-    .string({
-      required_error: "Start time is required",
-    })
-    .trim()
+    .string()
     .datetime({
-      offset: true, // allow timezone offset
-      message: "Start datetime must be a valid datetime",
-    }),
-  endDatetime: z
-    .string({
-      required_error: "End time is required",
+      offset: true,
+      message: "Invalid datetime format. Expected ISO 8601 format.",
     })
-    .trim()
-    .datetime({
-      offset: true, // allow timezone offset
-      message: "End datetime must be a valid datetime",
-    }),
-  totalTime: z.string().trim().min(1),
-  status: z
-    .string({
-      required_error: "Status is required",
-    })
-    .trim()
-    .min(1),
+    .trim(),
 });
 
-type ClientTimesheetRecord = z.infer<typeof clientTimesheetRecordSchema>;
+const clientClockOutRequestSchema = z.object({
+  endDatetime: z.string().trim(),
+  totalTime: z.string().trim(),
+});
 
-export default ClientTimesheetRecord;
-export { clientTimesheetRecordSchema };
+const clientTimesheetResponseSchema = z.object({
+  username: z.string().trim(),
+  startDatetime: z.string().trim(),
+  endDatetime: z.string().trim().optional(),
+  totalTime: z.string().trim().optional(),
+  status: z.string().trim(),
+});
+
+type ClientClockInRequest = z.infer<typeof clientClockInRequestSchema>;
+type ClientClockOutRequest = z.infer<typeof clientClockOutRequestSchema>;
+type ClientTimesheetResponse = z.infer<typeof clientTimesheetResponseSchema>;
+
+export {
+  clientClockInRequestSchema,
+  clientClockOutRequestSchema,
+  clientTimesheetResponseSchema,
+  type ClientClockInRequest,
+  type ClientClockOutRequest,
+  type ClientTimesheetResponse,
+};

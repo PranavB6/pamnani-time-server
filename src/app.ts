@@ -6,7 +6,7 @@ import swaggerUI from "swagger-ui-express";
 
 import errorController from "./middlewares/error";
 import openApiSpecRouter from "./routes/openApiSpec";
-import timesheetRouter from "./routes/timesheet";
+import userRouter from "./routes/user";
 import verifyCredentialsRouter from "./routes/verifyCredentials";
 import logger from "./utils/logger";
 
@@ -60,7 +60,7 @@ function createApp(): Express {
 
   app.use("/api/v1/verify-credentials", verifyCredentialsRouter);
 
-  app.use("/api/v1/timesheet", timesheetRouter);
+  app.use("/api/v1/user", userRouter);
 
   app.use(errorController);
 

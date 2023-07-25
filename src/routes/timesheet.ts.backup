@@ -8,7 +8,6 @@ import StatusCodes from "../models/statusCodes";
 import type UserCredentialsRecord from "../models/userCredentialsRecord";
 import calculateTotalTime from "../utils/calculateTotalTime";
 import expressAsyncHandler from "../utils/expressAsyncHandler";
-import TimesheetRecordConverter from "../utils/timesheetRecordConverter";
 
 interface IResponse extends Response {
   locals: {
