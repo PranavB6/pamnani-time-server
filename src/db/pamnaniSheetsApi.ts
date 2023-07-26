@@ -96,8 +96,8 @@ const PamnaniSheetsApi = {
         updatedRow.username,
         updatedRow.date,
         updatedRow.startTime,
-        "endTime" in updatedRow ? updatedRow.endTime : "",
-        "totalTime" in updatedRow ? updatedRow.totalTime : "",
+        updatedRow.endTime,
+        updatedRow.totalTime,
         updatedRow.status,
       ],
     ];

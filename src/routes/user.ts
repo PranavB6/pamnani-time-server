@@ -116,12 +116,10 @@ router.post(
 
     const timesheet = await PamnaniSheetsApi.getTimesheet();
 
-    const userTimesheet = timesheet.filter((timesheetRecord) => {
-      return timesheetRecord.username === res.locals.user.username;
-    });
-
-    const clockedInRecordIndex = userTimesheet.findIndex(
-      (timesheetRecord) => !isCompleteTimesheetRecord(timesheetRecord)
+    const clockedInRecordIndex = timesheet.findIndex(
+      (timesheetRecord) =>
+        timesheetRecord.username === res.locals.user.username &&
+        !isCompleteTimesheetRecord(timesheetRecord)
     );
 
     if (clockedInRecordIndex === -1) {
@@ -134,39 +132,48 @@ router.post(
 
     /* End */
 
-    const clockedInRecord = userTimesheet[
+    console.log(clockedInRecordIndex);
+
+    const clockedInRecord = timesheet[
       clockedInRecordIndex
     ] as ClockInTimesheetRecord;
 
-    const newTimesheetRecord: TimesheetRecord = {
-      username: res.locals.user.username,
-      date: clockedInRecord.date,
-      startTime: clockedInRecord.startTime,
-      endTime,
-      totalTime: clockOutRequest.totalTime,
-      status: "PENDING APPROVAL",
-    };
+    try {
+      console.log("Here A");
+      const newTimesheetRecord: TimesheetRecord = {
+        username: res.locals.user.username,
+        date: clockedInRecord.date,
+        startTime: clockedInRecord.startTime,
+        endTime,
+        totalTime: clockOutRequest.totalTime,
+        status: "PENDING APPROVAL",
+      };
 
-    await PamnaniSheetsApi.updateTimesheet(
-      clockedInRecordIndex,
-      newTimesheetRecord
-    );
+      console.log("HereB ");
 
-    const response: ClientTimesheetResponse = {
-      username: newTimesheetRecord.username,
-      startDatetime: combineDateAndTime(
-        newTimesheetRecord.date,
-        newTimesheetRecord.startTime
-      ),
-      endDatetime: combineDateAndTime(
-        newTimesheetRecord.date,
-        newTimesheetRecord.endTime
-      ),
-      totalTime: newTimesheetRecord.totalTime,
-      status: newTimesheetRecord.status,
-    };
+      await PamnaniSheetsApi.updateTimesheet(
+        clockedInRecordIndex,
+        newTimesheetRecord
+      );
 
-    res.json(response);
+      const response: ClientTimesheetResponse = {
+        username: newTimesheetRecord.username,
+        startDatetime: combineDateAndTime(
+          newTimesheetRecord.date,
+          newTimesheetRecord.startTime
+        ),
+        endDatetime: combineDateAndTime(
+          newTimesheetRecord.date,
+          newTimesheetRecord.endTime
+        ),
+        totalTime: newTimesheetRecord.totalTime,
+        status: newTimesheetRecord.status,
+      };
+
+      res.json(response);
+    } catch (error: unknown) {
+      console.log("Error thrown here");
+    }
   })
 );
 
