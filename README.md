@@ -6,7 +6,7 @@
 
 <br/>
 
-<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExY280YWhzMTF4aGhmdXl1cXRieTRreWE1YzlhZ3JxejRvM2cxeWltbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Rlwz4m0aHgXH13jyrE/giphy-downsized-large.gif" width="300" height="300" style="margin-bottom:30px;" />
+<img src="src/docs/gif.gif" width="300" height="300" style="margin-bottom:30px;" />
 
 ![Static Badge][NodeJS_Badge]
 ![Static Badge][TypeScript_Badge]
