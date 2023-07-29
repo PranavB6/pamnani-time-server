@@ -6,7 +6,9 @@
 
 <br/>
 
-<img src="src/docs/gif.gif" width="300" height="300" style="margin-bottom:30px;" />
+<img src="src/docs/gif.gif" width="300" height="300" />
+
+<br />
 
 ![Static Badge][NodeJS_Badge]
 ![Static Badge][TypeScript_Badge]
