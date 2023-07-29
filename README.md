@@ -4,11 +4,9 @@
 
 # Pamnani Time
 
-<br/>
-
 <img src="src/docs/gif.gif" width="300" height="300" />
 
-<br />
+&nbsp;
 
 ![Static Badge][NodeJS_Badge]
 ![Static Badge][TypeScript_Badge]
