@@ -20,6 +20,7 @@ import {
   separateDateAndTime,
 } from "../utils/datetimeConverter";
 import expressAsyncHandler from "../utils/expressAsyncHandler";
+import logger from "../utils/logger";
 
 interface IResponse extends Response {
   locals: {
@@ -43,6 +44,10 @@ router.get(
   "/history",
   auth,
   expressAsyncHandler(async (req: Request, res: IResponse) => {
+    logger.verbose(
+      `🍑 Processing request to get timesheet history for user: '${res.locals.user.username}'`
+    );
+
     const timesheet = await PamnaniSheetsApi.getTimesheet();
 
     const userTimesheet: TimesheetRecord[] = timesheet.filter(
@@ -50,6 +55,8 @@ router.get(
         return timesheetRecord.username === res.locals.user.username;
       }
     );
+
+    logger.verbose(`🍑 Got ${res.locals.user.username}'s timesheet records`);
 
     const response: ClientTimesheetResponse[] = userTimesheet.map(
       (record: TimesheetRecord) => {
@@ -73,6 +80,8 @@ router.get(
       }
     );
 
+    logger.verbose(`🍑 Mapped ${res.locals.user.username}'s timesheet records`);
+    logger.info(`🍑 Returning ${res.locals.user.username}'s timesheet records`);
     res.json(response);
   })
 );
@@ -81,8 +90,14 @@ router.post(
   "/clock-in",
   auth,
   expressAsyncHandler(async (req: Request, res: IResponse) => {
+    logger.verbose(
+      `🍑 Processing clock-in request for user: '${res.locals.user.username}'`
+    );
+
     const clockInRequest = clientClockInRequestSchema.parse(req.body);
     const { date, time } = separateDateAndTime(clockInRequest.startDatetime);
+
+    logger.verbose(`🍑 Parsed ${res.locals.user.username}'s clock-in request`);
 
     const clientTimesheetRecord: ClientTimesheetResponse = {
       username: res.locals.user.username,
@@ -91,6 +106,9 @@ router.post(
       totalTime: undefined,
       status: "CLOCKED IN",
     };
+    logger.debug(
+      `🍑 Client clock-in record: ${JSON.stringify(clientTimesheetRecord)}`
+    );
 
     const newTimesheetRequest: TimesheetRecord = {
       username: clientTimesheetRecord.username,
@@ -98,9 +116,18 @@ router.post(
       startTime: time,
       status: clientTimesheetRecord.status,
     };
+    logger.debug(
+      `🍑 Clock-in Timesheet record:${JSON.stringify(newTimesheetRequest)}`
+    );
 
+    logger.verbose(
+      `🍑 Appending clock-in record to ${res.locals.user.username}'s timesheet`
+    );
     await PamnaniSheetsApi.appendTimesheet(newTimesheetRequest);
 
+    logger.info(
+      `🍑 Appended clock-in record to ${res.locals.user.username}'s timesheet`
+    );
     res.json(clientTimesheetRecord);
   })
 );
@@ -109,8 +136,13 @@ router.post(
   "/clock-out",
   auth,
   expressAsyncHandler(async (req: Request, res: IResponse) => {
+    logger.verbose(
+      `🍑 Processing clock-out request for user: '${res.locals.user.username}'`
+    );
     const clockOutRequest = clientClockOutRequestSchema.parse(req.body);
     const { time: endTime } = separateDateAndTime(clockOutRequest.endDatetime);
+
+    logger.verbose(`🍑 Parsed ${res.locals.user.username}'s clock-out request`);
 
     /* Start: Get user's clock in record */
 
@@ -123,6 +155,7 @@ router.post(
     );
 
     if (clockedInRecordIndex === -1) {
+      logger.warn(`🍑 User: '${res.locals.user.username}' is not clocked in`);
       throw PamnaniError.fromObject({
         type: "CLOCK_OUT_ERROR",
         message: "You are not clocked in",
@@ -131,49 +164,63 @@ router.post(
     }
 
     /* End */
-
-    console.log(clockedInRecordIndex);
-
     const clockedInRecord = timesheet[
       clockedInRecordIndex
     ] as ClockInTimesheetRecord;
 
-    try {
-      console.log("Here A");
-      const newTimesheetRecord: TimesheetRecord = {
-        username: res.locals.user.username,
-        date: clockedInRecord.date,
-        startTime: clockedInRecord.startTime,
-        endTime,
-        totalTime: clockOutRequest.totalTime,
-        status: "PENDING APPROVAL",
-      };
+    logger.verbose(`🍑 Got ${res.locals.user.username}'s clock-in record`);
+    logger.debug(
+      `🍑 Clock-in Timesheet record: ${JSON.stringify(clockedInRecord)}`
+    );
 
-      console.log("HereB ");
+    const newTimesheetRecord: TimesheetRecord = {
+      username: res.locals.user.username,
+      date: clockedInRecord.date,
+      startTime: clockedInRecord.startTime,
+      endTime,
+      totalTime: clockOutRequest.totalTime,
+      status: "PENDING APPROVAL",
+    };
 
-      await PamnaniSheetsApi.updateTimesheet(
-        clockedInRecordIndex,
+    logger.verbose(
+      `🍑 Generated clock-out Timesheet record for user: '${res.locals.user.username}'`
+    );
+    logger.debug(
+      `🍑 Generated clock-out Timesheet record ${JSON.stringify(
         newTimesheetRecord
-      );
+      )}`
+    );
 
-      const response: ClientTimesheetResponse = {
-        username: newTimesheetRecord.username,
-        startDatetime: combineDateAndTime(
-          newTimesheetRecord.date,
-          newTimesheetRecord.startTime
-        ),
-        endDatetime: combineDateAndTime(
-          newTimesheetRecord.date,
-          newTimesheetRecord.endTime
-        ),
-        totalTime: newTimesheetRecord.totalTime,
-        status: newTimesheetRecord.status,
-      };
+    await PamnaniSheetsApi.updateTimesheet(
+      clockedInRecordIndex,
+      newTimesheetRecord
+    );
 
-      res.json(response);
-    } catch (error: unknown) {
-      console.log("Error thrown here");
-    }
+    const response: ClientTimesheetResponse = {
+      username: newTimesheetRecord.username,
+      startDatetime: combineDateAndTime(
+        newTimesheetRecord.date,
+        newTimesheetRecord.startTime
+      ),
+      endDatetime: combineDateAndTime(
+        newTimesheetRecord.date,
+        newTimesheetRecord.endTime
+      ),
+      totalTime: newTimesheetRecord.totalTime,
+      status: newTimesheetRecord.status,
+    };
+
+    logger.verbose(
+      `🍑 Generated client clock-out record for user: '${res.locals.user.username}'`
+    );
+    logger.debug(
+      `🍑 Generated client clock-out record ${JSON.stringify(response)}`
+    );
+
+    logger.info(
+      `🍑 Returning clock-out response for user: '${res.locals.user.username}'`
+    );
+    res.json(response);
   })
 );
 

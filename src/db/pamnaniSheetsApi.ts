@@ -10,22 +10,33 @@ import {
 } from "../models/timesheetRecord";
 import type UserCredentialsRecord from "../models/userCredentialsRecord";
 import { userCredentialsRecordSchema } from "../models/userCredentialsRecord";
+import logger from "../utils/logger";
 
 const PamnaniSheetsApi = {
   async getAllUserCredentials(): Promise<UserCredentialsRecord[]> {
+    logger.verbose("🐵 Getting all user credentials from Google Sheets");
+
     const googleSheetsDatabase = new GoogleSheetsDatabase();
     const loginSheetData = await googleSheetsDatabase.getRange(
       `Login Info!A:B`
     );
 
-    return loginSheetData
+    const records = loginSheetData
       .slice(1) // skip the first row - the headings
       .map((row, index) => {
         try {
-          return userCredentialsRecordSchema.parse({
+          const record = userCredentialsRecordSchema.parse({
             username: row[0],
             password: row[1],
           });
+
+          logger.debug(
+            `🐵 Parsed User Credentials Record ${index + 1}: ${JSON.stringify(
+              record
+            )}`
+          );
+
+          return record;
         } catch (error: unknown) {
           throw PamnaniError.fromObject({
             type: "Google Sheets Parsing Error",
@@ -37,19 +48,23 @@ const PamnaniSheetsApi = {
           });
         }
       });
+
+    logger.info("🐵 Got all User Credential Records from Google Sheets");
+    return records;
   },
 
   async getTimesheet(): Promise<TimesheetRecord[]> {
+    logger.verbose("🐵 Getting Timesheet Records from Google Sheets");
     const googleSheetsDatabase = new GoogleSheetsDatabase();
     const timesheetSheetData = await googleSheetsDatabase.getRange(
       `Timesheet!A:F`
     );
 
-    return timesheetSheetData
+    const records = timesheetSheetData
       .splice(1) // skip the first row - the headings
       .map((row, index) => {
         try {
-          return timesheetRecordSchema.parse({
+          const record = timesheetRecordSchema.parse({
             username: row[0],
             date: row[1],
             startTime: row[2],
@@ -57,6 +72,12 @@ const PamnaniSheetsApi = {
             totalTime: row[4],
             status: row[5],
           });
+
+          logger.debug(
+            `🐵 Parsed Timesheet Record ${index + 1}: ${JSON.stringify(record)}`
+          );
+
+          return record;
         } catch (error: unknown) {
           throw PamnaniError.fromObject({
             type: "Google Sheets Parsing Error",
@@ -68,9 +89,13 @@ const PamnaniSheetsApi = {
           });
         }
       });
+
+    logger.info("🐵 Got Timesheet Records from Google Sheets");
+    return records;
   },
 
   async appendTimesheet(newRow: TimesheetRecord): Promise<void> {
+    logger.verbose(`🐵 Appending row to Timesheet`);
     const googleSheetsDatabase = new GoogleSheetsDatabase();
     const values = [
       [
@@ -84,12 +109,14 @@ const PamnaniSheetsApi = {
     ];
 
     await googleSheetsDatabase.appendRange(`Timesheet!A:F`, values);
+    logger.info(`🐵 Appended row to Timesheet`);
   },
 
   async updateTimesheet(
     rowIndex: number,
     updatedRow: CompleteTimesheetRecord
   ): Promise<void> {
+    logger.verbose(`🐵 Updating row ${rowIndex} in Timesheet`);
     const googleSheetsDatabase = new GoogleSheetsDatabase();
     const values = [
       [
@@ -106,6 +133,8 @@ const PamnaniSheetsApi = {
       `Timesheet!A${rowIndex + 2}:F${rowIndex + 2}`,
       values
     );
+
+    logger.info(`🐵 Updated row ${rowIndex} in Timesheet`);
   },
 };
 

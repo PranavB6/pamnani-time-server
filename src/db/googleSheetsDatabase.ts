@@ -18,6 +18,7 @@ class GoogleSheetsDatabase {
     }
 
     GoogleSheetsDatabase.instance = this;
+    logger.verbose("🤖 Created Google Sheets Database instance");
   }
 
   async connect(): Promise<void> {
@@ -41,10 +42,13 @@ class GoogleSheetsDatabase {
       );
     }
 
+    logger.verbose(`🤖 Getting range '${range}' from Google Sheets`);
     const response = await this.spreadsheetInstance.spreadsheets.values.get({
       spreadsheetId: this.spreadsheetId,
       range,
     });
+
+    logger.info(`🤖 Got range '${range}' from Google Sheets`);
 
     return response.data.values ?? [];
   }
@@ -58,6 +62,7 @@ class GoogleSheetsDatabase {
       );
     }
 
+    logger.verbose(`🤖 Setting range '${range}' in Google Sheets`);
     await this.spreadsheetInstance.spreadsheets.values.update({
       spreadsheetId: this.spreadsheetId,
       range,
@@ -66,6 +71,7 @@ class GoogleSheetsDatabase {
         values,
       },
     });
+    logger.info(`🤖 Set range '${range}' in Google Sheets completed`);
   }
 
   async appendRange(range: string, values: string[][]): Promise<void> {
@@ -77,6 +83,7 @@ class GoogleSheetsDatabase {
       );
     }
 
+    logger.verbose(`🤖 Appending range '${range}' in Google Sheets`);
     await this.spreadsheetInstance.spreadsheets.values.append({
       spreadsheetId: this.spreadsheetId,
       range,
@@ -86,6 +93,7 @@ class GoogleSheetsDatabase {
         values,
       },
     });
+    logger.info(`🤖 Appending range '${range}' in Google Sheets completed`);
   }
 }
 

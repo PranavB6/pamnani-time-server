@@ -10,11 +10,14 @@ const expect = chai.expect;
 const verifyCredentialsUrl = "/api/v1/verify-credentials";
 
 const setGoogleSheetsGetRangeReturnValue = (values: string[][]): void => {
-  sinon.replace(
-    GoogleSheetsDatabase.prototype,
-    "getRange",
-    sinon.fake.resolves(values)
-  );
+  // sinon.replace(
+  //   GoogleSheetsDatabase.prototype,
+  //   "getRange",
+  //   sinon.fake.resolves(values)
+  // );
+
+  const getRangeStub = sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
+  getRangeStub.resolves(values);
 };
 
 describe("Verify Credentials", function () {

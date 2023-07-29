@@ -15,6 +15,7 @@ async function authMiddleware(
   const authorizationHeader = req.get("authorization");
 
   if (authorizationHeader == null) {
+    logger.warn(`🔑 No Authorization Header`);
     throw PamnaniError.fromObject({
       type: "Missing Authorization Header",
       message: "Authorization header is missing",
@@ -28,7 +29,9 @@ async function authMiddleware(
 
   const [username, password] = decoded.split(":");
 
-  logger.info(`Received username: '${username}', password: '${password}'`);
+  logger.verbose(
+    `🔑 Received username: '${username}', password: '${password}'`
+  );
 
   const loginRequest = userCredentialsRecordSchema.parse({
     username,
@@ -44,6 +47,7 @@ async function authMiddleware(
   );
 
   if (matchingUserRecord == null) {
+    logger.warn(`🔑 Invalid credentials for user: '${username}'`);
     throw PamnaniError.fromObject({
       type: "Invalid Credentials",
       message: "Invalid username or password",
@@ -51,7 +55,7 @@ async function authMiddleware(
     });
   }
 
-  logger.info(`User '${username}' authenticated successfully`);
+  logger.info(`🔑 User '${username}' authenticated successfully`);
 
   res.locals.user = matchingUserRecord;
 
