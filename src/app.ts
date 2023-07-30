@@ -19,11 +19,14 @@ function createApp(): Express {
   app.use(express.json());
 
   app.use(
-    morgan("dev", {
-      stream: {
-        write: (message: string) => logger.info(message.trim()),
-      },
-    })
+    morgan(
+      ":remote-addr :method :url :status :res[content-length] - :response-time ms",
+      {
+        stream: {
+          write: (message: string) => logger.info(message.trim()),
+        },
+      }
+    )
   );
 
   app.get("/", (req: Request, res: Response) => {

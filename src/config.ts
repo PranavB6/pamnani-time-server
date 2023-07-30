@@ -8,7 +8,7 @@ function getConfig(): Config {
     googleSheets: {
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
     },
-    showLogs: stringToBoolean(process.env.SHOW_LOGS),
+    showLogsInTests: stringToBoolean(process.env.SHOW_LOGS_IN_TESTS),
   });
 }
 
@@ -18,9 +18,9 @@ enum ENV {
   TEST = "test",
 }
 
-function stringToBoolean(str: string | undefined): boolean {
+function stringToBoolean(str: string | undefined): boolean | undefined {
   if (str === undefined) {
-    throw new Error("str is undefined");
+    return undefined;
   }
 
   const strLower = str.trim().toLowerCase();
@@ -39,14 +39,15 @@ function stringToBoolean(str: string | undefined): boolean {
 const configSchema = z
   .object({
     env: z.nativeEnum(ENV),
-    googleApplicationCredentials: z.string().min(1),
+    googleApplicationCredentials: z.string().optional(),
     googleSheets: z.object({
       spreadsheetId: z.string().min(1),
     }),
-    showLogs: z.boolean({
-      required_error: "showLogs is required",
-      invalid_type_error: "showLogs must be a boolean",
-    }),
+    showLogsInTests: z
+      .boolean({
+        invalid_type_error: "showLogs must be a boolean",
+      })
+      .default(false),
   })
   .strict(); // don't allow additional properties
 
