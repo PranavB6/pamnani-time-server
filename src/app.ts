@@ -7,6 +7,7 @@ import swaggerUI from "swagger-ui-express";
 import errorController from "./middlewares/error";
 import openApiSpecRouter from "./routes/openApiSpec";
 import userRouter from "./routes/user";
+import usersRouter from "./routes/users";
 import verifyCredentialsRouter from "./routes/verifyCredentials";
 import logger from "./utils/logger";
 
@@ -59,6 +60,8 @@ function createApp(): Express {
   // routes
 
   app.use("/api/v1/verify-credentials", verifyCredentialsRouter);
+
+  app.use("/api/v1/users", usersRouter);
 
   app.use("/api/v1/user", userRouter);
 

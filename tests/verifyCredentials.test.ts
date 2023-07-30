@@ -1,140 +1,157 @@
-import chai from "chai";
-import sinon from "sinon";
+import { expect } from "chai";
+import sinon, { type SinonStub } from "sinon";
 import supertest from "supertest";
 
 import createApp from "../src/app";
 import GoogleSheetsDatabase from "../src/db/googleSheetsDatabase";
 
-const expect = chai.expect;
-
 const verifyCredentialsUrl = "/api/v1/verify-credentials";
 
-const setGoogleSheetsGetRangeReturnValue = (values: string[][]): void => {
-  // sinon.replace(
-  //   GoogleSheetsDatabase.prototype,
-  //   "getRange",
-  //   sinon.fake.resolves(values)
-  // );
+// const setGoogleSheetsGetRangeReturnValue = (values: string[][]): void => {
+//   sinon.replace(
+//     GoogleSheetsDatabase.prototype,
+//     "getRange",
+//     sinon.fake.resolves(values)
+//   );
 
-  const getRangeStub = sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
-  getRangeStub.resolves(values);
+//   const getRangeStub = sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
+//   getRangeStub.resolves(values);
+// };
+
+const createGoogleSheetsDatabaseGetRangeStub = (): SinonStub => {
+  sinon.replace(
+    GoogleSheetsDatabase.prototype,
+    "connect",
+    sinon.fake.rejects(
+      new Error("Should not connect to Google Sheets Database for tests")
+    )
+  );
+
+  return sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
 };
 
-describe("Verify Credentials", function () {
-  beforeEach(() => {
-    sinon.replace(
-      GoogleSheetsDatabase.prototype,
-      "connect",
-      sinon.fake.rejects(
-        new Error("Should not connect to Google Sheets Database for tests")
-      )
-    );
-  });
+describe("POST /verify-credentials request", function () {
+  let googleSheetsGetRangeStub: SinonStub;
 
-  afterEach(() => {
+  afterEach(function () {
     sinon.restore();
   });
-  it("should return 200 when valid user credentials are sent", async function () {
-    setGoogleSheetsGetRangeReturnValue([
-      ["username", "password"],
-      ["Test Username", "Test Password"],
-    ]);
+  describe("when the database has no users", function () {
+    beforeEach(function () {
+      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
+      googleSheetsGetRangeStub.resolves([]);
+    });
 
-    const response = await supertest(createApp())
-      .post(verifyCredentialsUrl)
-      .auth("Test Username", "Test Password");
+    it("should return 401", async function () {
+      const response = await supertest(createApp())
+        .post(verifyCredentialsUrl)
+        .auth("Test Username", "Test Password");
 
-    expect(response.status).to.be.equal(200);
+      expect(response.status).to.be.equal(401);
+    });
   });
 
-  it("should return 200 when valid user credentials are sent in a database with 3 users", async function () {
-    setGoogleSheetsGetRangeReturnValue([
-      ["username", "password"],
-      ["User A", "Password A"],
-      ["User B", "Password B"],
-      ["User C", "Password C"],
-    ]);
+  describe("when the database has 1 user", function () {
+    const validUsername = "Test Username";
+    const validPassword = "Test Password";
 
-    const response = await supertest(createApp())
-      .post(verifyCredentialsUrl)
-      .auth("User B", "Password B");
+    beforeEach(function () {
+      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
+      googleSheetsGetRangeStub.resolves([
+        ["username", "password"],
+        [validUsername, validPassword],
+      ]);
+    });
 
-    expect(response.status).to.be.equal(200);
+    it("should return 200 if valid user credentials are sent", async function () {
+      const response = await supertest(createApp())
+        .post(verifyCredentialsUrl)
+        .auth(validUsername, validPassword);
+
+      expect(response.status).to.be.equal(200);
+    });
+
+    it("should return 401 if an incorrect password is sent", async function () {
+      const response = await supertest(createApp())
+        .post(verifyCredentialsUrl)
+        .auth(validUsername, "Incorrect Password");
+
+      expect(response.status).to.be.equal(401);
+    });
+
+    it("should return 401 if a non-existent username is sent", async function () {
+      const response = await supertest(createApp())
+        .post(verifyCredentialsUrl)
+        .auth("Non-existent Username", validPassword);
+
+      expect(response.status).to.be.equal(401);
+    });
+
+    it("should return 401 when there is no user credentials in the request", async function () {
+      const response = await supertest(createApp()).post(verifyCredentialsUrl);
+
+      expect(response.status).to.be.equal(401);
+    });
   });
 
-  it("should return 401 when non-existent username is sent", async function () {
-    setGoogleSheetsGetRangeReturnValue([
-      ["username", "password"],
-      ["Test Username", "Test Password"],
-    ]);
+  describe("when the database has 3 users", function () {
+    const userA = {
+      username: "User A",
+      password: "Password A",
+    };
 
-    const response = await supertest(createApp())
-      .post(verifyCredentialsUrl)
-      .auth("Non-Existent Username", "Test Password");
+    const userB = {
+      username: "User B",
+      password: "Password B",
+    };
 
-    expect(response.status).to.be.equal(401);
-  });
+    const userC = {
+      username: "User C",
+      password: "Password C",
+    };
 
-  it("should return 401 when wrong password is sent", async function () {
-    setGoogleSheetsGetRangeReturnValue([
-      ["username", "password"],
-      ["Test Username", "Test Password"],
-    ]);
+    beforeEach(function () {
+      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
 
-    const response = await supertest(createApp())
-      .post(verifyCredentialsUrl)
-      .auth("Test Username", "Wrong Password");
+      const userCredentialRecords = [userA, userB, userC].map((user) => [
+        user.username,
+        user.password,
+      ]);
 
-    expect(response.status).to.be.equal(401);
-  });
+      googleSheetsGetRangeStub.resolves([
+        ["username", "password"],
+        ...userCredentialRecords,
+      ]);
+    });
 
-  it("should return 401 when non-existent username and invalid password are sent", async function () {
-    setGoogleSheetsGetRangeReturnValue([
-      ["username", "password"],
-      ["Test Username", "Test Password"],
-    ]);
+    it("should return 200 if valid user credentials are sent", async function () {
+      const response = await supertest(createApp())
+        .post(verifyCredentialsUrl)
+        .auth(userB.username, userB.password);
 
-    const response = await supertest(createApp())
-      .post(verifyCredentialsUrl)
-      .auth("Non-Existent Username", "Invalid Password");
+      expect(response.status).to.be.equal(200);
+    });
 
-    expect(response.status).to.be.equal(401);
-  });
+    it("should return 401 if an incorrect password is sent", async function () {
+      const response = await supertest(createApp())
+        .post(verifyCredentialsUrl)
+        .auth(userB.username, "Incorrect Password");
 
-  it("should return 400 when username is not sent", async function () {
-    setGoogleSheetsGetRangeReturnValue([
-      ["username", "password"],
-      ["Test Username", "Test Password"],
-    ]);
+      expect(response.status).to.be.equal(401);
+    });
 
-    const response = await supertest(createApp())
-      .post(verifyCredentialsUrl)
-      .auth("", "Test Password");
+    it("should return 401 if a non-existent username is sent", async function () {
+      const response = await supertest(createApp())
+        .post(verifyCredentialsUrl)
+        .auth("Non-existent Username", userB.password);
 
-    expect(response.status).to.be.equal(400);
-  });
+      expect(response.status).to.be.equal(401);
+    });
 
-  it("should return 400 when password is not sent", async function () {
-    setGoogleSheetsGetRangeReturnValue([
-      ["username", "password"],
-      ["Test Username", "Test Password"],
-    ]);
+    it("should return 401 when there is no user credentials in the request", async function () {
+      const response = await supertest(createApp()).post(verifyCredentialsUrl);
 
-    const response = await supertest(createApp())
-      .post(verifyCredentialsUrl)
-      .auth("Test Username", "");
-
-    expect(response.status).to.be.equal(400);
-  });
-
-  it("should return 400 when no body is sent", async function () {
-    setGoogleSheetsGetRangeReturnValue([
-      ["username", "password"],
-      ["Test Username", "Test Password"],
-    ]);
-
-    const response = await supertest(createApp()).post(verifyCredentialsUrl);
-
-    expect(response.status).to.be.equal(400);
+      expect(response.status).to.be.equal(401);
+    });
   });
 });

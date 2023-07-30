@@ -19,7 +19,7 @@ async function authMiddleware(
     throw PamnaniError.fromObject({
       type: "Missing Authorization Header",
       message: "Authorization header is missing",
-      code: StatusCodes.BAD_REQUEST,
+      code: StatusCodes.UNAUTHORIZED,
     });
   }
 
