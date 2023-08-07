@@ -1,13 +1,13 @@
 import { ZodError } from "zod";
 
 import GoogleSheetsDatabase from "./googleSheetsDatabase";
+import type ExpandedTimesheetRecord from "../models/expandedTimesheetRecord";
+import {
+  expandedTimesheetRecordSchema,
+  isCompleteExpandedTimesheetRecord,
+} from "../models/expandedTimesheetRecord";
 import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
-import type TimesheetRecord from "../models/timesheetRecord";
-import {
-  type CompleteTimesheetRecord,
-  timesheetRecordSchema,
-} from "../models/timesheetRecord";
 import type UserCredentialsRecord from "../models/userCredentialsRecord";
 import { userCredentialsRecordSchema } from "../models/userCredentialsRecord";
 import logger from "../utils/logger";
@@ -53,7 +53,7 @@ const PamnaniSheetsApi = {
     return records;
   },
 
-  async getTimesheet(): Promise<TimesheetRecord[]> {
+  async getTimesheet(): Promise<ExpandedTimesheetRecord[]> {
     logger.verbose("🐵 Getting Timesheet Records from Google Sheets");
     const googleSheetsDatabase = new GoogleSheetsDatabase();
     const timesheetSheetData = await googleSheetsDatabase.getRange(
@@ -64,7 +64,7 @@ const PamnaniSheetsApi = {
       .splice(1) // skip the first row - the headings
       .map((row, index) => {
         try {
-          const record = timesheetRecordSchema.parse({
+          const record = expandedTimesheetRecordSchema.parse({
             username: row[0],
             date: row[1],
             startTime: row[2],
@@ -94,7 +94,7 @@ const PamnaniSheetsApi = {
     return records;
   },
 
-  async appendTimesheet(newRow: TimesheetRecord): Promise<void> {
+  async appendTimesheet(newRow: ExpandedTimesheetRecord): Promise<void> {
     logger.verbose(`🐵 Appending row to Timesheet`);
     const googleSheetsDatabase = new GoogleSheetsDatabase();
     const values = [
@@ -114,20 +114,35 @@ const PamnaniSheetsApi = {
 
   async updateTimesheet(
     rowIndex: number,
-    updatedRow: CompleteTimesheetRecord
+    updatedRow: ExpandedTimesheetRecord
   ): Promise<void> {
     logger.verbose(`🐵 Updating row ${rowIndex} in Timesheet`);
     const googleSheetsDatabase = new GoogleSheetsDatabase();
-    const values = [
-      [
-        updatedRow.username,
-        updatedRow.date,
-        updatedRow.startTime,
-        updatedRow.endTime,
-        updatedRow.totalTime,
-        updatedRow.status,
-      ],
-    ];
+
+    let values: string[][] = [];
+    if (isCompleteExpandedTimesheetRecord(updatedRow)) {
+      values = [
+        [
+          updatedRow.username,
+          updatedRow.date,
+          updatedRow.startTime,
+          updatedRow.endTime,
+          updatedRow.totalTime,
+          updatedRow.status,
+        ],
+      ];
+    } else {
+      values = [
+        [
+          updatedRow.username,
+          updatedRow.date,
+          updatedRow.startTime,
+          "", // endTime
+          "", // totalTime
+          updatedRow.status,
+        ],
+      ];
+    }
 
     await googleSheetsDatabase.setRange(
       `Timesheet!A${rowIndex + 2}:F${rowIndex + 2}`,

@@ -1,26 +1,14 @@
 import { expect } from "chai";
-import sinon, { type SinonStub } from "sinon";
+import sinon from "sinon";
 import supertest from "supertest";
 
+import GoogleSheetsDatabaseSimulator from "./data/googleSheetsDatabaseSimulator";
 import createApp from "../src/app";
-import GoogleSheetsDatabase from "../src/db/googleSheetsDatabase";
-
-const createGoogleSheetsDatabaseGetRangeStub = (): SinonStub => {
-  sinon.replace(
-    GoogleSheetsDatabase.prototype,
-    "connect",
-    sinon.fake.rejects(
-      new Error("Should not connect to Google Sheets Database for tests")
-    )
-  );
-
-  return sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
-};
 
 const usersUrl = "/api/v1/users";
 
 describe("GET /users request", function () {
-  let googleSheetsGetRangeStub: SinonStub;
+  let googleSheetsSimulator: GoogleSheetsDatabaseSimulator;
 
   afterEach(function () {
     sinon.restore();
@@ -28,8 +16,7 @@ describe("GET /users request", function () {
 
   describe("when the database has no users", function () {
     beforeEach(function () {
-      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
-      googleSheetsGetRangeStub.resolves([]);
+      googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
     });
 
     it("should return 200 with an empty array", async function () {
@@ -47,11 +34,8 @@ describe("GET /users request", function () {
     };
 
     beforeEach(function () {
-      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
-      googleSheetsGetRangeStub.resolves([
-        ["username", "password"],
-        [user.username, user.password],
-      ]);
+      googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
+      googleSheetsSimulator.addUser(user.username, user.password);
     });
 
     it("should return 200 with an array of 1 user", async function () {
@@ -79,17 +63,11 @@ describe("GET /users request", function () {
     };
 
     beforeEach(function () {
-      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
+      googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
 
-      const userCredentials = [userA, userB, userC].map((user) => [
-        user.username,
-        user.password,
-      ]);
-
-      googleSheetsGetRangeStub.resolves([
-        ["username", "password"],
-        ...userCredentials,
-      ]);
+      [userA, userB, userC].forEach((user) => {
+        googleSheetsSimulator.addUser(user.username, user.password);
+      });
     });
 
     it("should return 200 with an array of 3 users", async function () {

@@ -13,20 +13,30 @@ const separateDateAndTime = (
   date: string;
   time: string;
 } => {
-  const dateTime = dayjs(datetimeString).tz(defaultTimezone);
+  const datetime = dayjs(datetimeString).tz(defaultTimezone);
+
+  if (!datetime.isValid()) {
+    throw new Error(`Invalid datetime string: ${datetimeString}`);
+  }
 
   return {
-    date: dateTime.format("YYYY-MM-DD"),
-    time: dateTime.format("HH:mm"),
+    date: datetime.format("YYYY-MM-DD"),
+    time: datetime.format("HH:mm:ss"),
   };
 };
 
 const combineDateAndTime = (dateString: string, timeString: string): string => {
   const datetime = dayjs.tz(
     `${dateString} ${timeString}`,
-    "YYYY-MM-DD HH:mm",
+    "YYYY-MM-DD HH:mm:ss",
     defaultTimezone
   );
+
+  if (!datetime.isValid()) {
+    throw new Error(
+      `Invalid date and time strings: ${dateString}, ${timeString}`
+    );
+  }
 
   return datetime.toISOString();
 };

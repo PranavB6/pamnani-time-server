@@ -1,43 +1,35 @@
 import { expect } from "chai";
-import sinon, { type SinonStub } from "sinon";
+import sinon from "sinon";
 import supertest from "supertest";
 
+import CondensedTimesheetRecordCreator from "./data/condensedTimesheetRecordCreator";
+import GoogleSheetsDatabaseSimulator from "./data/googleSheetsDatabaseSimulator";
 import createApp from "../src/app";
-import GoogleSheetsDatabase from "../src/db/googleSheetsDatabase";
-import { type ClientTimesheetResponse } from "../src/models/clientTimesheetRecord";
-import type TimesheetRecord from "../src/models/timesheetRecord";
-import { combineDateAndTime } from "../src/utils/datetimeConverter";
+import { type CondensedTimesheetRecord } from "../src/models/condensedTimesheetRecord";
 
 const historyUrl = "/api/v1/user/history";
-const loginSheetRage = "Login Info!A:B";
-const timesheetSheetRange = "Timesheet!A:F";
+
 const user = {
   username: "Test Username",
   password: "Test Password",
 };
 
-const createGoogleSheetsDatabaseGetRangeStub = (): SinonStub => {
-  sinon.replace(
-    GoogleSheetsDatabase.prototype,
-    "connect",
-    sinon.fake.rejects(
-      new Error("Should not connect to Google Sheets Database for tests")
-    )
-  );
-
-  return sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
+const userWithoutTimesheetRecords = {
+  username: "Random Username",
+  password: "Random Password",
 };
 
 describe("GET /history request", function () {
-  let googleSheetsGetRangeStub: SinonStub;
+  let googleSheetsSimulator: GoogleSheetsDatabaseSimulator;
 
   beforeEach(function () {
-    googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
+    googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
 
-    googleSheetsGetRangeStub.withArgs(loginSheetRage).resolves([
-      ["username", "password"],
-      [user.username, user.password],
-    ]);
+    googleSheetsSimulator.addUser(user.username, user.password);
+    googleSheetsSimulator.addUser(
+      userWithoutTimesheetRecords.username,
+      userWithoutTimesheetRecords.password
+    );
   });
 
   afterEach(function () {
@@ -46,51 +38,37 @@ describe("GET /history request", function () {
 
   describe("with valid user credentials in the request", function () {
     describe("when the database has 1 compete timesheet record", function () {
-      const timesheetRecord: TimesheetRecord = {
-        username: user.username,
-        date: "2021-09-01",
-        startTime: "09:00",
-        endTime: "17:00",
-        totalTime: "8:00",
-        status: "Approved",
-      };
-
-      const clientTimesheetResponse: ClientTimesheetResponse = {
-        username: user.username,
-        startDatetime: combineDateAndTime(
-          timesheetRecord.date,
-          timesheetRecord.startTime
-        ),
-        endDatetime: combineDateAndTime(
-          timesheetRecord.date,
-          timesheetRecord.endTime
-        ),
-        totalTime: timesheetRecord.totalTime,
-        status: timesheetRecord.status,
-      };
+      let clientResponse: CondensedTimesheetRecord;
 
       beforeEach(function () {
-        googleSheetsGetRangeStub.withArgs(timesheetSheetRange).resolves([
-          ["username", "date", "startTime", "endTime", "totalTime", "status"],
-          [
-            timesheetRecord.username,
-            timesheetRecord.date,
-            timesheetRecord.startTime,
-            timesheetRecord.endTime,
-            timesheetRecord.totalTime,
-            timesheetRecord.status,
-          ],
-        ]);
+        clientResponse = new CondensedTimesheetRecordCreator(
+          user.username
+        ).build();
+
+        googleSheetsSimulator.addCondensedTimesheetRecord(clientResponse);
       });
 
-      it("should return 200 with an array of 1 user", async function () {
+      it("should return 200 with a the record for the current user", async function () {
         const response = await supertest(createApp())
           .get(historyUrl)
           .auth(user.username, user.password);
 
         expect(response.status).to.be.equal(200);
-        expect(response.body).to.be.deep.equal([clientTimesheetResponse]);
+        expect(response.body).to.be.deep.equal([clientResponse]);
+      });
+
+      it("should return an empty array if there are no records for the user", async function () {
+        const response = await supertest(createApp())
+          .get(historyUrl)
+          .auth(
+            userWithoutTimesheetRecords.username,
+            userWithoutTimesheetRecords.password
+          );
+
+        expect(response.body).to.be.deep.equal([]);
       });
     });
+
+    describe("when the database has multiple compete timesheet records", function () {});
   });
 });
