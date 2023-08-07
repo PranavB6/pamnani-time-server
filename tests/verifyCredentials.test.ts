@@ -1,45 +1,21 @@
 import { expect } from "chai";
-import sinon, { type SinonStub } from "sinon";
+import sinon from "sinon";
 import supertest from "supertest";
 
+import GoogleSheetsDatabaseSimulator from "./helpers/googleSheetsDatabaseSimulator";
 import createApp from "../src/app";
-import GoogleSheetsDatabase from "../src/db/googleSheetsDatabase";
 
 const verifyCredentialsUrl = "/api/v1/verify-credentials";
 
-// const setGoogleSheetsGetRangeReturnValue = (values: string[][]): void => {
-//   sinon.replace(
-//     GoogleSheetsDatabase.prototype,
-//     "getRange",
-//     sinon.fake.resolves(values)
-//   );
-
-//   const getRangeStub = sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
-//   getRangeStub.resolves(values);
-// };
-
-const createGoogleSheetsDatabaseGetRangeStub = (): SinonStub => {
-  sinon.replace(
-    GoogleSheetsDatabase.prototype,
-    "connect",
-    sinon.fake.rejects(
-      new Error("Should not connect to Google Sheets Database for tests")
-    )
-  );
-
-  return sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
-};
-
 describe("POST /verify-credentials request", function () {
-  let googleSheetsGetRangeStub: SinonStub;
+  let googleSheetsSimulator: GoogleSheetsDatabaseSimulator;
 
   afterEach(function () {
     sinon.restore();
   });
   describe("when the database has no users", function () {
     beforeEach(function () {
-      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
-      googleSheetsGetRangeStub.resolves([]);
+      googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
     });
 
     it("should return 401", async function () {
@@ -52,21 +28,20 @@ describe("POST /verify-credentials request", function () {
   });
 
   describe("when the database has 1 user", function () {
-    const validUsername = "Test Username";
-    const validPassword = "Test Password";
+    const validUser = {
+      username: "Test Username",
+      password: "Test Password",
+    };
 
     beforeEach(function () {
-      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
-      googleSheetsGetRangeStub.resolves([
-        ["username", "password"],
-        [validUsername, validPassword],
-      ]);
+      googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
+      googleSheetsSimulator.addUser(validUser.username, validUser.password);
     });
 
     it("should return 200 if valid user credentials are sent", async function () {
       const response = await supertest(createApp())
         .post(verifyCredentialsUrl)
-        .auth(validUsername, validPassword);
+        .auth(validUser.username, validUser.password);
 
       expect(response.status).to.be.equal(200);
     });
@@ -74,7 +49,7 @@ describe("POST /verify-credentials request", function () {
     it("should return 401 if an incorrect password is sent", async function () {
       const response = await supertest(createApp())
         .post(verifyCredentialsUrl)
-        .auth(validUsername, "Incorrect Password");
+        .auth(validUser.username, "Incorrect Password");
 
       expect(response.status).to.be.equal(401);
     });
@@ -82,7 +57,7 @@ describe("POST /verify-credentials request", function () {
     it("should return 401 if a non-existent username is sent", async function () {
       const response = await supertest(createApp())
         .post(verifyCredentialsUrl)
-        .auth("Non-existent Username", validPassword);
+        .auth("Non-existent Username", validUser.password);
 
       expect(response.status).to.be.equal(401);
     });
@@ -111,17 +86,11 @@ describe("POST /verify-credentials request", function () {
     };
 
     beforeEach(function () {
-      googleSheetsGetRangeStub = createGoogleSheetsDatabaseGetRangeStub();
+      googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
 
-      const userCredentialRecords = [userA, userB, userC].map((user) => [
-        user.username,
-        user.password,
-      ]);
-
-      googleSheetsGetRangeStub.resolves([
-        ["username", "password"],
-        ...userCredentialRecords,
-      ]);
+      [userA, userB, userC].forEach((user) => {
+        googleSheetsSimulator.addUser(user.username, user.password);
+      });
     });
 
     it("should return 200 if valid user credentials are sent", async function () {

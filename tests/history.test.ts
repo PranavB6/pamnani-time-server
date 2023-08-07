@@ -2,16 +2,21 @@ import { expect } from "chai";
 import sinon from "sinon";
 import supertest from "supertest";
 
-import CondensedTimesheetRecordCreator from "./data/condensedTimesheetRecordCreator";
-import GoogleSheetsDatabaseSimulator from "./data/googleSheetsDatabaseSimulator";
+import CondensedTimesheetRecordCreator from "./helpers/condensedTimesheetRecordCreator";
+import GoogleSheetsDatabaseSimulator from "./helpers/googleSheetsDatabaseSimulator";
 import createApp from "../src/app";
 import { type CondensedTimesheetRecord } from "../src/models/condensedTimesheetRecord";
 
 const historyUrl = "/api/v1/user/history";
 
-const user = {
-  username: "Test Username",
-  password: "Test Password",
+const userA = {
+  username: "User A",
+  password: "Password A",
+};
+
+const userB = {
+  username: "User B",
+  password: "Password B",
 };
 
 const userWithoutTimesheetRecords = {
@@ -25,11 +30,9 @@ describe("GET /history request", function () {
   beforeEach(function () {
     googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
 
-    googleSheetsSimulator.addUser(user.username, user.password);
-    googleSheetsSimulator.addUser(
-      userWithoutTimesheetRecords.username,
-      userWithoutTimesheetRecords.password
-    );
+    [userA, userB, userWithoutTimesheetRecords].forEach((user) => {
+      googleSheetsSimulator.addUser(user.username, user.password);
+    });
   });
 
   afterEach(function () {
@@ -42,7 +45,7 @@ describe("GET /history request", function () {
 
       beforeEach(function () {
         clientResponse = new CondensedTimesheetRecordCreator(
-          user.username
+          userA.username
         ).build();
 
         googleSheetsSimulator.addCondensedTimesheetRecord(clientResponse);
@@ -51,7 +54,7 @@ describe("GET /history request", function () {
       it("should return 200 with a the record for the current user", async function () {
         const response = await supertest(createApp())
           .get(historyUrl)
-          .auth(user.username, user.password);
+          .auth(userA.username, userA.password);
 
         expect(response.status).to.be.equal(200);
         expect(response.body).to.be.deep.equal([clientResponse]);
@@ -69,6 +72,92 @@ describe("GET /history request", function () {
       });
     });
 
-    describe("when the database has multiple compete timesheet records", function () {});
+    describe("when the database has multiple compete timesheet records", function () {
+      let clientResponses: CondensedTimesheetRecord[];
+
+      beforeEach(function () {
+        clientResponses = [
+          new CondensedTimesheetRecordCreator(userA.username).build(),
+          new CondensedTimesheetRecordCreator(userB.username).build(),
+          new CondensedTimesheetRecordCreator(userA.username).build(),
+        ];
+
+        clientResponses.forEach((record) => {
+          googleSheetsSimulator.addCondensedTimesheetRecord(record);
+        });
+      });
+
+      it("should return 200 with a the records for the current user A", async function () {
+        const response = await supertest(createApp())
+          .get(historyUrl)
+          .auth(userA.username, userA.password);
+
+        expect(response.status).to.be.equal(200);
+        expect(response.body).to.be.deep.equal([
+          clientResponses[0],
+          clientResponses[2],
+        ]);
+      });
+
+      it("should return 200 with a the records for the current user B", async function () {
+        const response = await supertest(createApp())
+          .get(historyUrl)
+          .auth(userB.username, userB.password);
+
+        expect(response.status).to.be.equal(200);
+        expect(response.body).to.be.deep.equal([clientResponses[1]]);
+      });
+    });
+
+    describe("when the database has clocked in and complete timesheet records", function () {
+      let clientResponses: CondensedTimesheetRecord[];
+
+      beforeEach(function () {
+        clientResponses = [
+          new CondensedTimesheetRecordCreator(userA.username)
+            .makeClockIn()
+            .build(),
+          new CondensedTimesheetRecordCreator(userB.username)
+            .makeClockIn()
+            .build(),
+          new CondensedTimesheetRecordCreator(userA.username).build(),
+        ];
+
+        clientResponses.forEach((record) => {
+          googleSheetsSimulator.addCondensedTimesheetRecord(record);
+        });
+      });
+
+      it("should return 200 with a the records for the current user A", async function () {
+        const response = await supertest(createApp())
+          .get(historyUrl)
+          .auth(userA.username, userA.password);
+
+        expect(response.status).to.be.equal(200);
+        expect(response.body).to.be.deep.equal([
+          clientResponses[0],
+          clientResponses[2],
+        ]);
+      });
+
+      it("should return 200 with a the records for the current user B", async function () {
+        const response = await supertest(createApp())
+          .get(historyUrl)
+          .auth(userB.username, userB.password);
+
+        expect(response.status).to.be.equal(200);
+        expect(response.body).to.be.deep.equal([clientResponses[1]]);
+      });
+    });
+  });
+
+  describe("with invalid user credentials in the request", function () {
+    it("should return 401", async function () {
+      const response = await supertest(createApp())
+        .get(historyUrl)
+        .auth("Invalid Username", "Invalid Password");
+
+      expect(response.status).to.be.equal(401);
+    });
   });
 });

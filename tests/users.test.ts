@@ -2,7 +2,7 @@ import { expect } from "chai";
 import sinon from "sinon";
 import supertest from "supertest";
 
-import GoogleSheetsDatabaseSimulator from "./data/googleSheetsDatabaseSimulator";
+import GoogleSheetsDatabaseSimulator from "./helpers/googleSheetsDatabaseSimulator";
 import createApp from "../src/app";
 
 const usersUrl = "/api/v1/users";

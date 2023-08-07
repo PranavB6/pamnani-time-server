@@ -7,25 +7,30 @@ import {
 } from "../../src/models/condensedTimesheetRecord";
 import calculateTotalTime from "../../src/utils/calculateTotalTime";
 
-const datetimeToString = (date: Date): string => {
+const formatDate = (date: Date): string => {
   return dayjs(date).set("millisecond", 0).toISOString();
 };
 
 class CondensedTimesheetRecordCreator {
-  recordData: object;
+  recordData: CondensedTimesheetRecord;
 
   constructor(username: string) {
-    const startDatetime = datetimeToString(faker.date.recent());
-
-    const randomTotalTime = faker.datatype.number({
-      min: 1,
-      max: 12,
-      precision: 0.25, // 15 minutes
+    const [dateA, dateB] = faker.date.betweens({
+      from: dayjs().set("hour", 0).set("minute", 0).set("second", 0).toDate(),
+      to: dayjs().set("hour", 23).set("minute", 59).set("second", 59).toDate(),
+      count: 2,
     });
 
-    const endDatetime = dayjs(startDatetime)
-      .add(randomTotalTime, "hour")
-      .toISOString();
+    let startDatetime;
+    let endDatetime;
+
+    if (dayjs(dateA).isBefore(dateB)) {
+      startDatetime = formatDate(dateA);
+      endDatetime = formatDate(dateB);
+    } else {
+      startDatetime = formatDate(dateB);
+      endDatetime = formatDate(dateA);
+    }
 
     const totalTime = calculateTotalTime(startDatetime, endDatetime);
 
@@ -41,6 +46,13 @@ class CondensedTimesheetRecordCreator {
         "Clocked In",
       ]),
     };
+  }
+
+  public makeClockIn(): CondensedTimesheetRecordCreator {
+    delete this.recordData.endDatetime;
+    delete this.recordData.totalTime;
+
+    return this;
   }
 
   public build(): CondensedTimesheetRecord {
