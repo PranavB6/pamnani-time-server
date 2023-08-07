@@ -27,6 +27,18 @@ class GoogleSheetsDatabaseSimulator {
       )
     );
 
+    sinon.replace(
+      GoogleSheetsDatabase.prototype,
+      "setRange",
+      sinon.fake.resolves(true)
+    );
+
+    sinon.replace(
+      GoogleSheetsDatabase.prototype,
+      "appendRange",
+      sinon.fake.resolves(true)
+    );
+
     this.getRangeStub = sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
 
     this.getRangeStub.withArgs(loginSheetRage).resolves(this.users);

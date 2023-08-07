@@ -41,14 +41,14 @@ describe("GET /history request", function () {
 
   describe("with valid user credentials in the request", function () {
     describe("when the database has 1 compete timesheet record", function () {
-      let clientResponse: CondensedTimesheetRecord;
+      let timesheetRecord: CondensedTimesheetRecord;
 
       beforeEach(function () {
-        clientResponse = new CondensedTimesheetRecordCreator(
+        timesheetRecord = new CondensedTimesheetRecordCreator(
           userA.username
         ).build();
 
-        googleSheetsSimulator.addCondensedTimesheetRecord(clientResponse);
+        googleSheetsSimulator.addCondensedTimesheetRecord(timesheetRecord);
       });
 
       it("should return 200 with a the record for the current user", async function () {
@@ -57,7 +57,7 @@ describe("GET /history request", function () {
           .auth(userA.username, userA.password);
 
         expect(response.status).to.be.equal(200);
-        expect(response.body).to.be.deep.equal([clientResponse]);
+        expect(response.body).to.be.deep.equal([timesheetRecord]);
       });
 
       it("should return an empty array if there are no records for the user", async function () {
@@ -73,16 +73,16 @@ describe("GET /history request", function () {
     });
 
     describe("when the database has multiple compete timesheet records", function () {
-      let clientResponses: CondensedTimesheetRecord[];
+      let timesheetRecords: CondensedTimesheetRecord[];
 
       beforeEach(function () {
-        clientResponses = [
+        timesheetRecords = [
           new CondensedTimesheetRecordCreator(userA.username).build(),
           new CondensedTimesheetRecordCreator(userB.username).build(),
           new CondensedTimesheetRecordCreator(userA.username).build(),
         ];
 
-        clientResponses.forEach((record) => {
+        timesheetRecords.forEach((record) => {
           googleSheetsSimulator.addCondensedTimesheetRecord(record);
         });
       });
@@ -94,8 +94,8 @@ describe("GET /history request", function () {
 
         expect(response.status).to.be.equal(200);
         expect(response.body).to.be.deep.equal([
-          clientResponses[0],
-          clientResponses[2],
+          timesheetRecords[0],
+          timesheetRecords[2],
         ]);
       });
 
@@ -105,15 +105,15 @@ describe("GET /history request", function () {
           .auth(userB.username, userB.password);
 
         expect(response.status).to.be.equal(200);
-        expect(response.body).to.be.deep.equal([clientResponses[1]]);
+        expect(response.body).to.be.deep.equal([timesheetRecords[1]]);
       });
     });
 
     describe("when the database has clocked in and complete timesheet records", function () {
-      let clientResponses: CondensedTimesheetRecord[];
+      let timesheetRecords: CondensedTimesheetRecord[];
 
       beforeEach(function () {
-        clientResponses = [
+        timesheetRecords = [
           new CondensedTimesheetRecordCreator(userA.username)
             .makeClockIn()
             .build(),
@@ -123,7 +123,7 @@ describe("GET /history request", function () {
           new CondensedTimesheetRecordCreator(userA.username).build(),
         ];
 
-        clientResponses.forEach((record) => {
+        timesheetRecords.forEach((record) => {
           googleSheetsSimulator.addCondensedTimesheetRecord(record);
         });
       });
@@ -135,8 +135,8 @@ describe("GET /history request", function () {
 
         expect(response.status).to.be.equal(200);
         expect(response.body).to.be.deep.equal([
-          clientResponses[0],
-          clientResponses[2],
+          timesheetRecords[0],
+          timesheetRecords[2],
         ]);
       });
 
@@ -146,7 +146,7 @@ describe("GET /history request", function () {
           .auth(userB.username, userB.password);
 
         expect(response.status).to.be.equal(200);
-        expect(response.body).to.be.deep.equal([clientResponses[1]]);
+        expect(response.body).to.be.deep.equal([timesheetRecords[1]]);
       });
     });
   });
