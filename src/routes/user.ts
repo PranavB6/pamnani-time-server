@@ -8,10 +8,7 @@ import {
 } from "../models/clientRequest";
 import { type CondensedTimesheetRecord } from "../models/condensedTimesheetRecord";
 import type ExpandedTimesheetRecord from "../models/expandedTimesheetRecord";
-import {
-  type ClockedInExpandedTimesheetRecord,
-  isCompleteExpandedTimesheetRecord,
-} from "../models/expandedTimesheetRecord";
+import { isCompleteExpandedTimesheetRecord } from "../models/expandedTimesheetRecord";
 import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
 import type UserCredentialsRecord from "../models/userCredentialsRecord";
@@ -184,7 +181,7 @@ router.post(
 );
 
 async function findClockedInTimesheetRecord(username: string): Promise<{
-  record: ClockedInExpandedTimesheetRecord;
+  record: ExpandedTimesheetRecord;
   index: number;
 } | null> {
   const timesheet = await PamnaniSheetsApi.getTimesheet();
@@ -198,9 +195,7 @@ async function findClockedInTimesheetRecord(username: string): Promise<{
   if (clockedInRecordIndex === -1) {
     return null;
   } else {
-    const record = timesheet[
-      clockedInRecordIndex
-    ] as ClockedInExpandedTimesheetRecord;
+    const record = timesheet[clockedInRecordIndex];
 
     return {
       record,

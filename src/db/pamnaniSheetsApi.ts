@@ -2,10 +2,7 @@ import { ZodError } from "zod";
 
 import GoogleSheetsDatabase from "./googleSheetsDatabase";
 import type ExpandedTimesheetRecord from "../models/expandedTimesheetRecord";
-import {
-  expandedTimesheetRecordSchema,
-  isCompleteExpandedTimesheetRecord,
-} from "../models/expandedTimesheetRecord";
+import { expandedTimesheetRecordSchema } from "../models/expandedTimesheetRecord";
 import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
 import type UserCredentialsRecord from "../models/userCredentialsRecord";
@@ -102,8 +99,8 @@ const PamnaniSheetsApi = {
         newRow.username,
         newRow.date,
         newRow.startTime,
-        "endTime" in newRow ? newRow.endTime : "",
-        "totalTime" in newRow ? newRow.totalTime : "",
+        newRow.endTime ?? "",
+        newRow.totalTime ?? "",
         newRow.status,
       ],
     ];
@@ -119,30 +116,16 @@ const PamnaniSheetsApi = {
     logger.verbose(`🐵 Updating row ${rowIndex} in Timesheet`);
     const googleSheetsDatabase = new GoogleSheetsDatabase();
 
-    let values: string[][] = [];
-    if (isCompleteExpandedTimesheetRecord(updatedRow)) {
-      values = [
-        [
-          updatedRow.username,
-          updatedRow.date,
-          updatedRow.startTime,
-          updatedRow.endTime,
-          updatedRow.totalTime,
-          updatedRow.status,
-        ],
-      ];
-    } else {
-      values = [
-        [
-          updatedRow.username,
-          updatedRow.date,
-          updatedRow.startTime,
-          "", // endTime
-          "", // totalTime
-          updatedRow.status,
-        ],
-      ];
-    }
+    const values = [
+      [
+        updatedRow.username,
+        updatedRow.date,
+        updatedRow.startTime,
+        updatedRow.endTime ?? "",
+        updatedRow.totalTime ?? "",
+        updatedRow.status,
+      ],
+    ];
 
     await googleSheetsDatabase.setRange(
       `Timesheet!A${rowIndex + 2}:F${rowIndex + 2}`,

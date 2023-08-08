@@ -1,53 +1,48 @@
 import { z } from "zod";
 
-const clockedInExpandedTimesheetRecordSchema = z.object({
-  username: z.string().trim(),
-  date: z.string().trim(),
-  startTime: z.string().trim(),
-  status: z.string().trim(),
-});
+const emptyStringToUndefined = (value?: string): string | undefined => {
+  if (value == null) {
+    return undefined;
+  }
 
-type ClockedInExpandedTimesheetRecord = z.infer<
-  typeof clockedInExpandedTimesheetRecordSchema
->;
+  if (value === "") {
+    return undefined;
+  }
 
-const completeExpandedTimesheetRecordSchema = z.object({
-  username: z.string().trim(),
-  date: z.string().trim(),
-  startTime: z.string().trim(),
-  status: z.string().trim(),
-  endTime: z.string().trim(),
-  totalTime: z.string().trim(),
-});
+  return value;
+};
 
-type CompleteExpandedTimesheetRecord = z.infer<
-  typeof completeExpandedTimesheetRecordSchema
->;
+const expandedTimesheetRecordSchema = z
+  .object({
+    username: z.string().trim(),
+    date: z.string().trim(),
+    startTime: z.string().trim(),
+    endTime: z.string().trim().optional().transform(emptyStringToUndefined),
+    totalTime: z.string().trim().optional().transform(emptyStringToUndefined),
+    status: z.string().trim(),
+  })
+  .refine(
+    (data) => {
+      // if one of them is null, they should both be null
+      if (data.endTime == null || data.totalTime == null) {
+        return data.endTime == null && data.totalTime == null;
+      }
 
-const expandedTimesheetRecordSchema = z.union([
-  completeExpandedTimesheetRecordSchema, // ORDER MATTERS. zod will try to parse the first schema first
-  clockedInExpandedTimesheetRecordSchema,
-]);
+      return true;
+    },
+    {
+      message: "endTime and totalTime must both be nullish or both be defined",
+      path: ["endTime", "totalTime"],
+    }
+  );
 
 type ExpandedTimesheetRecord = z.infer<typeof expandedTimesheetRecordSchema>;
 
-export default ExpandedTimesheetRecord;
-
 const isCompleteExpandedTimesheetRecord = (
-  timesheetRecord: ExpandedTimesheetRecord
-): timesheetRecord is CompleteExpandedTimesheetRecord => {
-  return (
-    "endTime" in timesheetRecord &&
-    timesheetRecord.endTime != null &&
-    timesheetRecord.endTime.length > 0
-  );
+  record: ExpandedTimesheetRecord
+): record is Required<ExpandedTimesheetRecord> => {
+  return record.endTime != null && record.totalTime != null;
 };
 
-export {
-  expandedTimesheetRecordSchema,
-  clockedInExpandedTimesheetRecordSchema,
-  completeExpandedTimesheetRecordSchema,
-  isCompleteExpandedTimesheetRecord,
-  type ClockedInExpandedTimesheetRecord,
-  type CompleteExpandedTimesheetRecord,
-};
+export default ExpandedTimesheetRecord;
+export { expandedTimesheetRecordSchema, isCompleteExpandedTimesheetRecord };
