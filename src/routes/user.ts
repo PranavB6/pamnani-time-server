@@ -66,6 +66,28 @@ router.post(
       `🍑 Processing clock-in request for user: '${res.locals.user.username}'`
     );
 
+    logger.verbose("🍑 Checking if user is already clocked in");
+    const data = await findClockedInTimesheetRecord(res.locals.user.username);
+
+    if (data != null) {
+      logger.error(
+        `🍑 User: '${res.locals.user.username}' is already clocked in`
+      );
+      throw PamnaniError.fromObject({
+        type: "CLOCK_IN_ERROR",
+        message: "You are already clocked in",
+        code: StatusCodes.CONFLICT,
+        data: {
+          clockedInRecord: data.record,
+          clockInIndex: data.index,
+        },
+      });
+    }
+
+    logger.info(
+      `🍑 User '${res.locals.user.password}' is not already clocked in 👍`
+    );
+
     const clockInRequest = clientClockInRequestSchema.parse(req.body);
 
     logger.verbose(`🍑 Parsed ${res.locals.user.username}'s clock-in request`);
@@ -110,21 +132,27 @@ router.post(
     logger.verbose(
       `🍑 Processing clock-out request for user: '${res.locals.user.username}'`
     );
-    const clockOutRequest = clientClockOutRequestSchema.parse(req.body);
+    logger.verbose(`🍑 Checking if user is already clocked in`);
+    const data = await findClockedInTimesheetRecord(res.locals.user.username);
 
+    if (data == null) {
+      logger.warn(`🍑 User: '${res.locals.user.username}' is not clocked in`);
+      throw PamnaniError.fromObject({
+        type: "CLOCK_OUT_ERROR",
+        message: "You are not clocked in",
+        code: StatusCodes.CONFLICT,
+      });
+    }
+    const { record: oldRecord, index: oldRecordIndex } = data;
+    logger.verbose(`🍑 Got ${res.locals.user.username}'s clock-in record`);
+    logger.debug(`🍑 Clock-in Timesheet record: ${JSON.stringify(oldRecord)}`);
+
+    const clockOutInfo = clientClockOutRequestSchema.parse(req.body);
     logger.verbose(`🍑 Parsed ${res.locals.user.username}'s clock-out request`);
 
-    const { record: matchingClockedInRecord, index: clockedInRecordIndex } =
-      await findClockedInTimesheetRecord(res.locals.user.username);
-
-    logger.verbose(`🍑 Got ${res.locals.user.username}'s clock-in record`);
-    logger.debug(
-      `🍑 Clock-in Timesheet record: ${JSON.stringify(matchingClockedInRecord)}`
-    );
-
-    const newCondensedRecord: CondensedTimesheetRecord = {
-      ...condenseTimesheetRecord(matchingClockedInRecord),
-      ...clockOutRequest,
+    const newRecord: CondensedTimesheetRecord = {
+      ...condenseTimesheetRecord(oldRecord),
+      ...clockOutInfo,
       status: "PENDING APPROVAL",
     };
 
@@ -132,12 +160,10 @@ router.post(
       `🍑 Generated client clock-out record for user: '${res.locals.user.username}'`
     );
     logger.debug(
-      `🍑 Generated client clock-out record ${JSON.stringify(
-        newCondensedRecord
-      )}`
+      `🍑 Generated client clock-out record ${JSON.stringify(newRecord)}`
     );
 
-    const newTimesheetRecord = expandTimesheetRecord(newCondensedRecord);
+    const newTimesheetRecord = expandTimesheetRecord(newRecord);
 
     logger.verbose(
       `🍑 Generated clock-out Timesheet record for user: '${res.locals.user.username}'`
@@ -148,22 +174,19 @@ router.post(
       )}`
     );
 
-    await PamnaniSheetsApi.updateTimesheet(
-      clockedInRecordIndex,
-      newTimesheetRecord
-    );
+    await PamnaniSheetsApi.updateTimesheet(oldRecordIndex, newTimesheetRecord);
 
     logger.info(
       `🍑 Returning clock-out response for user: '${res.locals.user.username}'`
     );
-    res.json(newCondensedRecord);
+    res.json(newRecord);
   })
 );
 
 async function findClockedInTimesheetRecord(username: string): Promise<{
   record: ClockedInExpandedTimesheetRecord;
   index: number;
-}> {
+} | null> {
   const timesheet = await PamnaniSheetsApi.getTimesheet();
 
   const clockedInRecordIndex = timesheet.findIndex(
@@ -173,22 +196,17 @@ async function findClockedInTimesheetRecord(username: string): Promise<{
   );
 
   if (clockedInRecordIndex === -1) {
-    logger.warn(`🍑 User: '${username}' is not clocked in`);
-    throw PamnaniError.fromObject({
-      type: "CLOCK_OUT_ERROR",
-      message: "You are not clocked in",
-      code: StatusCodes.BAD_REQUEST,
-    });
+    return null;
+  } else {
+    const record = timesheet[
+      clockedInRecordIndex
+    ] as ClockedInExpandedTimesheetRecord;
+
+    return {
+      record,
+      index: clockedInRecordIndex,
+    };
   }
-
-  const matchingClockedInRecord = timesheet[
-    clockedInRecordIndex
-  ] as ClockedInExpandedTimesheetRecord;
-
-  return {
-    record: matchingClockedInRecord,
-    index: clockedInRecordIndex,
-  };
 }
 
 export default router;

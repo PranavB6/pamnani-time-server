@@ -19,11 +19,6 @@ const userB = {
   password: "Password B",
 };
 
-const userWithoutTimesheetRecords = {
-  username: "Random Username",
-  password: "Random Password",
-};
-
 const now = dayjs().set("millisecond", 0).toISOString();
 
 describe("POST /clock-in request", function () {
@@ -32,7 +27,7 @@ describe("POST /clock-in request", function () {
   beforeEach(function () {
     googleSheetsSimulator = new GoogleSheetsDatabaseSimulator();
 
-    [userA, userB, userWithoutTimesheetRecords].forEach((user) => {
+    [userA, userB].forEach((user) => {
       googleSheetsSimulator.addUser(user.username, user.password);
     });
   });
@@ -44,8 +39,6 @@ describe("POST /clock-in request", function () {
   describe("with valid user credentials in the request", function () {
     describe("and the user does not have any records", function () {
       it("should return 200 if the request body is valid", async function () {
-        // since we are going to not compare the "status" field in the response (as it may be different in the google sheets database), we need to remove it from the new record that we will compare the response to
-
         const requestBody = {
           startDatetime: now,
         };
@@ -177,9 +170,35 @@ describe("POST /clock-in request", function () {
         });
       });
 
-      it("should return 400 if the request body is valid", async function () {
+      it("should return 409 even if the request body is valid", async function () {
         const requestBody = {
           startDatetime: now,
+        };
+
+        const response = await supertest(createApp())
+          .post(clockInUrl)
+          .auth(userA.username, userA.password)
+          .send(requestBody);
+
+        expect(response.status).to.be.equal(409);
+      });
+
+      it("should return 409 even if the request body is missing mandatory fields", async function () {
+        const requestBody = {
+          // missing startDatetime
+        };
+
+        const response = await supertest(createApp())
+          .post(clockInUrl)
+          .auth(userA.username, userA.password)
+          .send(requestBody);
+
+        expect(response.status).to.be.equal(409);
+      });
+
+      it("should return 409 even if the startDatetime is NOT a valid datetime", async function () {
+        const requestBody = {
+          startDatetime: "not a valid datetime",
         };
 
         const response = await supertest(createApp())
