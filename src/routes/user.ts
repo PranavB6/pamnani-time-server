@@ -6,7 +6,10 @@ import {
   clientClockInRequestSchema,
   clientClockOutRequestSchema,
 } from "../models/clientRequest";
-import { type CondensedTimesheetRecord } from "../models/condensedTimesheetRecord";
+import {
+  type CondensedTimesheetRecord,
+  condensedTimesheetRecordSchema,
+} from "../models/condensedTimesheetRecord";
 import type ExpandedTimesheetRecord from "../models/expandedTimesheetRecord";
 import { isCompleteExpandedTimesheetRecord } from "../models/expandedTimesheetRecord";
 import PamnaniError from "../models/pamnaniError";
@@ -89,36 +92,36 @@ router.post(
 
     logger.verbose(`🍑 Parsed ${res.locals.user.username}'s clock-in request`);
 
-    const clientTimesheetRecord: CondensedTimesheetRecord = {
-      username: res.locals.user.username,
-      startDatetime: clockInRequest.startDatetime,
-      endDatetime: undefined,
-      totalTime: undefined,
-      status: "CLOCKED IN",
-    };
+    const newCondensedRecord: CondensedTimesheetRecord =
+      condensedTimesheetRecordSchema.parse({
+        username: res.locals.user.username,
+        startDatetime: clockInRequest.startDatetime,
+        endDatetime: undefined,
+        totalTime: undefined,
+        status: "CLOCKED IN",
+      });
 
     logger.debug(
-      `🍑 Client clock-in record: ${JSON.stringify(clientTimesheetRecord)}`
+      `🍑 Client clock-in record: ${JSON.stringify(newCondensedRecord)}`
     );
 
-    const newTimesheetRequest: ExpandedTimesheetRecord = expandTimesheetRecord(
-      clientTimesheetRecord
-    );
+    const newTimesheetRecord: ExpandedTimesheetRecord =
+      expandTimesheetRecord(newCondensedRecord);
 
     logger.debug(
-      `🍑 Clock-in Timesheet record:${JSON.stringify(newTimesheetRequest)}`
+      `🍑 Clock-in Timesheet record:${JSON.stringify(newTimesheetRecord)}`
     );
 
     logger.verbose(
       `🍑 Appending clock-in record to ${res.locals.user.username}'s timesheet`
     );
 
-    await PamnaniSheetsApi.appendTimesheet(newTimesheetRequest);
+    await PamnaniSheetsApi.appendTimesheet(newTimesheetRecord);
 
     logger.info(
       `🍑 Appended clock-in record to ${res.locals.user.username}'s timesheet`
     );
-    res.json(clientTimesheetRecord);
+    res.json(newCondensedRecord);
   })
 );
 
@@ -129,11 +132,12 @@ router.post(
     logger.verbose(
       `🍑 Processing clock-out request for user: '${res.locals.user.username}'`
     );
+
     logger.verbose(`🍑 Checking if user is already clocked in`);
     const data = await findClockedInTimesheetRecord(res.locals.user.username);
 
     if (data == null) {
-      logger.warn(`🍑 User: '${res.locals.user.username}' is not clocked in`);
+      logger.error(`🍑 User: '${res.locals.user.username}' is not clocked in`);
       throw PamnaniError.fromObject({
         type: "CLOCK_OUT_ERROR",
         message: "You are not clocked in",
@@ -147,11 +151,12 @@ router.post(
     const clockOutInfo = clientClockOutRequestSchema.parse(req.body);
     logger.verbose(`🍑 Parsed ${res.locals.user.username}'s clock-out request`);
 
-    const newRecord: CondensedTimesheetRecord = {
-      ...condenseTimesheetRecord(oldRecord),
-      ...clockOutInfo,
-      status: "PENDING APPROVAL",
-    };
+    const newRecord: CondensedTimesheetRecord =
+      condensedTimesheetRecordSchema.parse({
+        ...condenseTimesheetRecord(oldRecord),
+        ...clockOutInfo,
+        status: "PENDING APPROVAL",
+      });
 
     logger.verbose(
       `🍑 Generated client clock-out record for user: '${res.locals.user.username}'`

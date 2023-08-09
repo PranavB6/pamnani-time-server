@@ -10,4 +10,14 @@ const condensedTimesheetRecordSchema = z.object({
 
 type CondensedTimesheetRecord = z.infer<typeof condensedTimesheetRecordSchema>;
 
-export { type CondensedTimesheetRecord, condensedTimesheetRecordSchema };
+const isCompleteCondensedTimesheetRecord = (
+  record: CondensedTimesheetRecord
+): record is Required<CondensedTimesheetRecord> => {
+  return record.endDatetime != null && record.totalTime != null;
+};
+
+export {
+  type CondensedTimesheetRecord,
+  condensedTimesheetRecordSchema,
+  isCompleteCondensedTimesheetRecord,
+};
