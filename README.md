@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="src/docs/logo.png" alt="drawing" width="200"/>
+<img src="src/docs/logo_stroked.png" alt="drawing" width="200"/>
 
 # Timeey
 
