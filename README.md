@@ -19,9 +19,6 @@
 ![Static Badge][ESLint_Badge]
 ![Static Badge][Prettier_Badge]
 
-![forthebadge][BuiltWithLove_Badge]
-![forthebadge][GlutenFree_Badge]
-
 [View Swagger Documentation](https://editor.swagger.io/?url=https://raw.githubusercontent.com/PranavB6/timeey-server/main/src/docs/openapi.yaml)
 
 </div>
@@ -91,8 +88,6 @@ NOTE: The project is automatically linted and formatted on commit using Husky an
 - [Prettier](https://prettier.io/)
   - A code formatter used to format the project
 
-[BuiltWithLove_Badge]: https://forthebadge.com/images/badges/built-with-love.svg
-[GlutenFree_Badge]: https://forthebadge.com/images/badges/gluten-free.svg
 [NodeJS_Badge]: https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white
 [TypeScript_Badge]: https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white
 [ExpressJS_Badge]: https://img.shields.io/badge/Express.js-EEEEEE?style=for-the-badge
