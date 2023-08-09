@@ -2,8 +2,8 @@ import { type NextFunction, type Request, type Response } from "express";
 import { GaxiosError } from "gaxios";
 import { ZodError } from "zod";
 
-import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
+import TimeeyError from "../models/TimeeyError";
 import logger from "../utils/logger";
 
 function errorController(
@@ -21,8 +21,8 @@ function errorController(
   if (error instanceof ZodError) {
     res.status(StatusCodes.BAD_REQUEST).send({
       errors: error.issues.map((issue) =>
-        PamnaniError.fromObject({
-          type: issue.code, // ZodIssue.code is PamnaniErrors.type
+        TimeeyError.fromObject({
+          type: issue.code, // ZodIssue.code is TimeeyError.type
           message: issue.message,
           code: StatusCodes.BAD_REQUEST,
           data: issue,
@@ -32,7 +32,7 @@ function errorController(
     return;
   }
 
-  if (error instanceof PamnaniError) {
+  if (error instanceof TimeeyError) {
     res.status(error.code).send({
       errors: [error.toJSON()],
     });
@@ -42,7 +42,7 @@ function errorController(
   if (error instanceof GaxiosError) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       errors: [
-        PamnaniError.fromObject({
+        TimeeyError.fromObject({
           type: "Google Sheets API Error",
           message: error.message,
           code: error.response?.status ?? 500,

@@ -2,7 +2,7 @@
 
 <img src="src/docs/logo.png" alt="drawing" width="200"/>
 
-# Pamnani Time
+# Timeey
 
 <img src="src/docs/gif.gif" width="300" height="300" />
 
@@ -22,7 +22,7 @@
 ![forthebadge][BuiltWithLove_Badge]
 ![forthebadge][GlutenFree_Badge]
 
-[View Swagger Documentation](https://editor.swagger.io/?url=https://raw.githubusercontent.com/PranavB6/pamnani-time-server/main/src/docs/openapi.yaml)
+[View Swagger Documentation](https://editor.swagger.io/?url=https://raw.githubusercontent.com/PranavB6/timeey-server/main/src/docs/openapi.yaml)
 
 </div>
 
@@ -30,7 +30,7 @@
 
 The main goal of this project is to create a simple and easy to use time tracking application using Google Sheets to store all the data. This is aimed to managers who want to track their employees' time.
 
-This is the backend of the application. It is a REST API that is used to communicate with the Google Sheets API. You can find the frontend [here](https://github.com/Madeeha-Anjum/pamnani-time-client). This project is built on NodeJS using the ExpressJS framework.
+This is the backend of the application. It is a REST API that is used to communicate with the Google Sheets API. You can find the frontend [here](https://github.com/Madeeha-Anjum/timeey-time-client). This project is built on NodeJS using the ExpressJS framework.
 
 ## :chart_with_upwards_trend: Future Plans
 

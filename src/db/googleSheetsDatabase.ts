@@ -1,8 +1,8 @@
 import { google, type sheets_v4 } from "googleapis";
 
 import getConfig from "../config";
-import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
+import TimeeyError from "../models/TimeeyError";
 import logger from "../utils/logger";
 
 class GoogleSheetsDatabase {
@@ -35,7 +35,7 @@ class GoogleSheetsDatabase {
 
   async getRange(range: string): Promise<string[][]> {
     if (this.spreadsheetInstance == null) {
-      throw new PamnaniError(
+      throw new TimeeyError(
         "Server Error",
         `Tried to get range '${range}' before connecting to Google Sheets`,
         StatusCodes.INTERNAL_SERVER_ERROR
@@ -55,7 +55,7 @@ class GoogleSheetsDatabase {
 
   async setRange(range: string, values: string[][]): Promise<void> {
     if (this.spreadsheetInstance == null) {
-      throw new PamnaniError(
+      throw new TimeeyError(
         "Server Error",
         `Tried to set range '${range}' before connecting to Google Sheets`,
         StatusCodes.INTERNAL_SERVER_ERROR
@@ -76,7 +76,7 @@ class GoogleSheetsDatabase {
 
   async appendRange(range: string, values: string[][]): Promise<void> {
     if (this.spreadsheetInstance == null) {
-      throw new PamnaniError(
+      throw new TimeeyError(
         "Server Error",
         `Tried to append range '${range}' before connecting to Google Sheets`,
         StatusCodes.INTERNAL_SERVER_ERROR

@@ -1,8 +1,8 @@
 import { type NextFunction, type Request, type Response } from "express";
 
-import PamnaniSheetsApi from "../db/pamnaniSheetsApi";
-import PamnaniError from "../models/pamnaniError";
+import TimeeySheetsApi from "../db/timeeySheetsApi";
 import StatusCodes from "../models/statusCodes";
+import TimeeyError from "../models/TimeeyError";
 import { userCredentialsRecordSchema } from "../models/userCredentialsRecord";
 import expressAsyncHandler from "../utils/expressAsyncHandler";
 import logger from "../utils/logger";
@@ -16,7 +16,7 @@ async function authMiddleware(
 
   if (authorizationHeader == null) {
     logger.warn(`🔑 No Authorization Header`);
-    throw PamnaniError.fromObject({
+    throw TimeeyError.fromObject({
       type: "Missing Authorization Header",
       message: "Authorization header is missing",
       code: StatusCodes.UNAUTHORIZED,
@@ -38,7 +38,7 @@ async function authMiddleware(
     password,
   });
 
-  const userCredentials = await PamnaniSheetsApi.getAllUserCredentials();
+  const userCredentials = await TimeeySheetsApi.getAllUserCredentials();
 
   const matchingUserRecord = userCredentials.find(
     (userCredential) =>
@@ -48,7 +48,7 @@ async function authMiddleware(
 
   if (matchingUserRecord == null) {
     logger.warn(`🔑 Invalid credentials for user: '${username}'`);
-    throw PamnaniError.fromObject({
+    throw TimeeyError.fromObject({
       type: "Invalid Credentials",
       message: "Invalid username or password",
       code: StatusCodes.UNAUTHORIZED,

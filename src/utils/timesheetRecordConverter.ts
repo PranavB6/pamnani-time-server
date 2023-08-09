@@ -9,8 +9,8 @@ import {
   expandedTimesheetRecordSchema,
   isCompleteExpandedTimesheetRecord,
 } from "../models/expandedTimesheetRecord";
-import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
+import TimeeyError from "../models/TimeeyError";
 
 const expandTimesheetRecord = (
   condensedRecord: CondensedTimesheetRecord
@@ -25,7 +25,7 @@ const expandTimesheetRecord = (
     );
 
     if (startDate !== endDate) {
-      throw PamnaniError.fromObject({
+      throw TimeeyError.fromObject({
         type: "INVALID_DATE",
         message: "Start and end dates must be the same",
         code: StatusCodes.BAD_REQUEST,
@@ -43,7 +43,7 @@ const expandTimesheetRecord = (
         condensedRecord.endDatetime
       )
     ) {
-      throw PamnaniError.fromObject({
+      throw TimeeyError.fromObject({
         type: "INVALID_TOTAL_TIME",
         message: "Calculated total time does not match provided total time",
         code: StatusCodes.BAD_REQUEST,

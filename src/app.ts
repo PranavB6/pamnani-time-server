@@ -31,8 +31,8 @@ function createApp(): Express {
 
   app.get("/", (req: Request, res: Response) => {
     res.send(`
-      <h1>Pamnani Time API</h1>
-      <p> Hello From Pamnani Time API 😁 </p>
+      <h1>Timeey API</h1>
+      <p> Hello From Timeey API 😁 </p>
       <p>See <a href="/docs">/docs</a> for Swagger documentation</p>
       <p>See <a href="/redoc">/redoc</a> for Redoc documentation</p>
     `);

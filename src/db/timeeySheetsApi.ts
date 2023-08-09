@@ -3,13 +3,13 @@ import { ZodError } from "zod";
 import GoogleSheetsDatabase from "./googleSheetsDatabase";
 import type ExpandedTimesheetRecord from "../models/expandedTimesheetRecord";
 import { expandedTimesheetRecordSchema } from "../models/expandedTimesheetRecord";
-import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
+import TimeeyError from "../models/TimeeyError";
 import type UserCredentialsRecord from "../models/userCredentialsRecord";
 import { userCredentialsRecordSchema } from "../models/userCredentialsRecord";
 import logger from "../utils/logger";
 
-const PamnaniSheetsApi = {
+const TimeeySheetsApi = {
   async getAllUserCredentials(): Promise<UserCredentialsRecord[]> {
     logger.verbose("🐵 Getting all user credentials from Google Sheets");
 
@@ -35,7 +35,7 @@ const PamnaniSheetsApi = {
 
           return record;
         } catch (error: unknown) {
-          throw PamnaniError.fromObject({
+          throw TimeeyError.fromObject({
             type: "Google Sheets Parsing Error",
             message: `Error parsing user credentials record from row: ${
               index + 2 // +2 because we skipped the first row and google sheets is 1-indexed
@@ -76,7 +76,7 @@ const PamnaniSheetsApi = {
 
           return record;
         } catch (error: unknown) {
-          throw PamnaniError.fromObject({
+          throw TimeeyError.fromObject({
             type: "Google Sheets Parsing Error",
             message: `Error parsing timesheet record from row: ${
               index + 2 // +2 because we skipped the first row and google sheets is 1-indexed
@@ -136,4 +136,4 @@ const PamnaniSheetsApi = {
   },
 };
 
-export default PamnaniSheetsApi;
+export default TimeeySheetsApi;

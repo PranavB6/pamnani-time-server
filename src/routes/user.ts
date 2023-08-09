@@ -1,6 +1,6 @@
 import { type Request, type Response, Router } from "express";
 
-import PamnaniSheetsApi from "../db/pamnaniSheetsApi";
+import TimeeySheetsApi from "../db/timeeySheetsApi";
 import auth from "../middlewares/auth";
 import {
   clientClockInRequestSchema,
@@ -12,8 +12,8 @@ import {
 } from "../models/condensedTimesheetRecord";
 import type ExpandedTimesheetRecord from "../models/expandedTimesheetRecord";
 import { isCompleteExpandedTimesheetRecord } from "../models/expandedTimesheetRecord";
-import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
+import TimeeyError from "../models/TimeeyError";
 import type UserCredentialsRecord from "../models/userCredentialsRecord";
 import expressAsyncHandler from "../utils/expressAsyncHandler";
 import logger from "../utils/logger";
@@ -38,7 +38,7 @@ router.get(
       `🍑 Processing request to get timesheet history for user: '${res.locals.user.username}'`
     );
 
-    const timesheet = await PamnaniSheetsApi.getTimesheet();
+    const timesheet = await TimeeySheetsApi.getTimesheet();
 
     const userTimesheet: ExpandedTimesheetRecord[] = timesheet.filter(
       (timesheetRecord) => {
@@ -73,7 +73,7 @@ router.post(
       logger.error(
         `🍑 User: '${res.locals.user.username}' is already clocked in`
       );
-      throw PamnaniError.fromObject({
+      throw TimeeyError.fromObject({
         type: "CLOCK_IN_ERROR",
         message: "You are already clocked in",
         code: StatusCodes.CONFLICT,
@@ -116,7 +116,7 @@ router.post(
       `🍑 Appending clock-in record to ${res.locals.user.username}'s timesheet`
     );
 
-    await PamnaniSheetsApi.appendTimesheet(newTimesheetRecord);
+    await TimeeySheetsApi.appendTimesheet(newTimesheetRecord);
 
     logger.info(
       `🍑 Appended clock-in record to ${res.locals.user.username}'s timesheet`
@@ -138,7 +138,7 @@ router.post(
 
     if (data == null) {
       logger.error(`🍑 User: '${res.locals.user.username}' is not clocked in`);
-      throw PamnaniError.fromObject({
+      throw TimeeyError.fromObject({
         type: "CLOCK_OUT_ERROR",
         message: "You are not clocked in",
         code: StatusCodes.CONFLICT,
@@ -176,7 +176,7 @@ router.post(
       )}`
     );
 
-    await PamnaniSheetsApi.updateTimesheet(oldRecordIndex, newTimesheetRecord);
+    await TimeeySheetsApi.updateTimesheet(oldRecordIndex, newTimesheetRecord);
 
     logger.info(
       `🍑 Returning clock-out response for user: '${res.locals.user.username}'`
@@ -189,7 +189,7 @@ async function findClockedInTimesheetRecord(username: string): Promise<{
   record: ExpandedTimesheetRecord;
   index: number;
 } | null> {
-  const timesheet = await PamnaniSheetsApi.getTimesheet();
+  const timesheet = await TimeeySheetsApi.getTimesheet();
 
   const clockedInRecordIndex = timesheet.findIndex(
     (timesheetRecord) =>

@@ -3,8 +3,8 @@ import duration, { type Duration } from "dayjs/plugin/duration";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 
-import PamnaniError from "../models/pamnaniError";
 import StatusCodes from "../models/statusCodes";
+import TimeeyError from "../models/TimeeyError";
 
 dayjs.extend(duration);
 dayjs.extend(utc);
@@ -20,7 +20,7 @@ function calculateTotalTime(
   const endDatetime = dayjs(endDatetimeString).tz(defaultTimezone);
 
   if (!startDatetime.isValid()) {
-    throw new PamnaniError(
+    throw new TimeeyError(
       "INVALID_DATE",
       `Start datetime: '${startDatetimeString}' is invalid`,
       StatusCodes.BAD_REQUEST
@@ -28,7 +28,7 @@ function calculateTotalTime(
   }
 
   if (!endDatetime.isValid()) {
-    throw new PamnaniError(
+    throw new TimeeyError(
       "INVALID_DATE",
       `End datetime: '${endDatetimeString}' is invalid`,
       StatusCodes.BAD_REQUEST
@@ -36,7 +36,7 @@ function calculateTotalTime(
   }
 
   if (endDatetime.isBefore(startDatetime)) {
-    throw PamnaniError.fromObject({
+    throw TimeeyError.fromObject({
       type: "INVALID_DATE",
       message: `End datetime: '${endDatetimeString}' must be after start datetime: '${startDatetimeString}'`,
       code: StatusCodes.BAD_REQUEST,
@@ -51,7 +51,7 @@ function calculateTotalTime(
   const endDate = endDatetime.format("YYYY-MM-DD");
 
   if (startDate !== endDate) {
-    throw new PamnaniError(
+    throw new TimeeyError(
       "INVALID_DATE",
       `Start Date: '${startDate}' and End Date: '${endDate}' must be the same`,
       StatusCodes.BAD_REQUEST

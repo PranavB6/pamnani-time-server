@@ -1,6 +1,6 @@
 import StatusCodes from "./statusCodes";
 
-class PamnaniError extends Error {
+class TimeeyError extends Error {
   type: string;
   message: string;
   code: StatusCodes;
@@ -33,9 +33,9 @@ class PamnaniError extends Error {
     message: string;
     code: StatusCodes;
     data?: unknown;
-  }): PamnaniError {
-    return new PamnaniError(obj.type, obj.message, obj.code, obj.data);
+  }): TimeeyError {
+    return new TimeeyError(obj.type, obj.message, obj.code, obj.data);
   }
 }
 
-export default PamnaniError;
+export default TimeeyError;
