@@ -1,11 +1,18 @@
 import { faker } from "@faker-js/faker";
 import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 
 import {
   type CondensedTimesheetRecord,
   condensedTimesheetRecordSchema,
 } from "../../src/models/condensedTimesheetRecord";
 import calculateTotalTime from "../../src/utils/calculateTotalTime";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const defaultTimezone = "America/Edmonton";
 
 const formatDate = (date: Date): string => {
   return dayjs(date).set("millisecond", 0).toISOString();
@@ -16,8 +23,18 @@ class CondensedTimesheetRecordCreator {
 
   constructor(username: string) {
     const [dateA, dateB] = faker.date.betweens({
-      from: dayjs().set("hour", 0).set("minute", 0).set("second", 0).toDate(),
-      to: dayjs().set("hour", 23).set("minute", 59).set("second", 59).toDate(),
+      from: dayjs()
+        .tz(defaultTimezone)
+        .set("hour", 0)
+        .set("minute", 0)
+        .set("second", 0)
+        .toDate(),
+      to: dayjs()
+        .tz(defaultTimezone)
+        .set("hour", 23)
+        .set("minute", 59)
+        .set("second", 59)
+        .toDate(),
       count: 2,
     });
 
