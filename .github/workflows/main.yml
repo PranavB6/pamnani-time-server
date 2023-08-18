@@ -4,7 +4,7 @@ on:
     tags:
       - v*
 jobs:
-  test-and-build-artifacts:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -21,6 +21,7 @@ jobs:
         run: npm run build
   build-image-and-push:
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
