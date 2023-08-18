@@ -1,71 +1,79 @@
-openapi: "3.1.0"
+openapi: "3.0.2"
 info:
   title: Timeey Server
   version: "1.0"
 servers:
-  - url: https://pamnani-time-server-jxze5dvqeq-uc.a.run.app/
+  - url: https://pamnani-time-server-jxze5dvqeq-uc.a.run.app
     description: "Cloud Run Server"
   - url: http://localhost:3000
     description: "Local Development"
 paths:
+  /:
+    get:
+      description: "Hello World Page"
+      operationId: "base"
+      tags:
+        - "Public"
+      responses:
+        "200":
+          description: Hello World Page - Useful for checking is the API is running
+  /docs:
+    get:
+      description: "Get Swagger Docs"
+      operationId: "get-swagger"
+      tags:
+        - "Public"
+      responses:
+        "200":
+          description: "Swagger Docs"
+
+  /redoc:
+    get:
+      description: "Get Redoc Docs"
+      operationId: "get-redoc"
+      tags:
+        - "Public"
+      responses:
+        "200":
+          description: "Redoc Docs"
+
+  /api/v1/users:
+    get:
+      description: "Get a list of all users"
+      operationId: "get-users"
+      tags:
+        - "Public"
+      responses:
+        "200":
+          description: "A list of all users"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example: ["Pranav", "Madeeha"]
+
   /api/v1/verify-credentials:
     post:
+      description: "Verify a user's credentials"
       operationId: "verify-credentials"
+      tags:
+        - "Authenticated"
       security:
         - BasicAuth: []
       responses:
         "200":
           description: OK
-        "400":
-          description: Bad Request
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                Missing Username:
-                  value:
-                    errors:
-                      - type: "invalid_type"
-                        message: "Username is required"
-                        code: 400
-                        data:
-                          path: ["username"]
-                          expected: string
-                          received: undefined
-                Missing Password:
-                  value:
-                    errors:
-                      - type: "invalid_type"
-                        message: "Password is required"
-                        code: 400
-                        data:
-                          path: ["password"]
-                          expected: string
-                          received: undefined
         "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                Invalid Credentials:
-                  value:
-                    errors:
-                      - type: "invalid_credentials"
-                        message: "Invalid credentials"
-                        code: 401
-        "500":
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-  /api/v1/timesheet:
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/user/history:
     get:
-      description: "Get user's timesheet"
-      operationId: "get-timesheet"
+      description: "Get user's timesheet history"
+      operationId: "get-history"
+      tags:
+        - "Authenticated"
       security:
         - BasicAuth: []
       responses:
@@ -76,78 +84,30 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ClientTimesheetRecord"
-              examples:
-                Hugh Cok's Timesheet:
-                  description: "Hugh Cok's timesheet. The response will contain the timesheet records only for the current user (obtained from the header). ie. If the timesheet contains records for other users, they will be filtered out."
-                  value:
-                    - username: "Hugh Cok"
-                      startDatetime: "2023-07-20T05:00:00.000Z"
-                      endDatetime: "2023-07-20T08:11:00.000Z"
-                      totalTime: "3:15:00"
-                      status: "Pending"
-                    - username: "Hugh Cok"
-                      startDatetime: "2023-07-19T23:10:00.000Z"
-                      endDatetime: "2023-07-19T02:55:00.000Z"
-                      totalTime: "03:45"
-                      status: "Approved"
-                Suk Deep's Timesheet:
-                  description: "Suk Deep's timesheet. The response will contain the timesheet records only for the current user (obtained from the header). ie. If the timesheet contains records for other users, they will be filtered out."
-                  value:
-                    - username: "Suk Deep"
-                      startDatetime: "2023-07-15T18:05:00.000Z"
-                      endDatetime: "2023-07-15T21:55:00.000Z"
-                      totalTime: "03:45"
-                      status: "Pending"
-                    - username: "Suk Deep"
-                      startDatetime: "2023-07-13T00:03:00.000Z"
-                      endDatetime: "2023-07-13T02:10:00.000Z"
-                      totalTime: "02:00"
-                      status: "Approved"
-        "400":
-          description: "Bad Request"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                Missing Username:
-                  value:
-                    errors:
-                      - type: "invalid_type"
-                        message: "Username is required"
-                        code: 400
-                        data:
-                          path: ["username"]
-                          expected: string
-                          received: undefined
-                Missing Password:
-                  value:
-                    errors:
-                      - type: "invalid_type"
-                        message: "Password is required"
-                        code: 400
-                        data:
-                          path: ["password"]
-                          expected: string
-                          received: undefined
-
+                  $ref: "#/components/schemas/Timesheet-Record"
+              example:
+                - username: "Suk Deep"
+                  startDatetime: "2023-07-15T18:05:00.000Z"
+                  endDatetime: "2023-07-15T21:55:00.000Z"
+                  totalTime: "03:45"
+                  status: "Pending"
+                - username: "Suk Deep"
+                  startDatetime: "2023-07-13T00:03:00.000Z"
+                  endDatetime: "2023-07-13T02:10:00.000Z"
+                  totalTime: "02:00"
+                  status: "Approved"
+                - username: "Suk Deep"
+                  startDatetime: "2023-07-19T15:00:35-06:00"
+                  status: "CLOCKED IN"
         "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                Invalid Credentials:
-                  value:
-                    errors:
-                      - type: "invalid_credentials"
-                        message: "Invalid credentials"
-                        code: 401
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/user/clock-in:
     post:
-      description: "Create a new timesheet record"
+      description: "Create a new timesheet record for user"
       operationId: "create-timesheet-record"
+      tags:
+        - "Authenticated"
       security:
         - BasicAuth: []
       requestBody:
@@ -160,30 +120,21 @@ paths:
                   type: string
                   format: date-time
                   description: "Start datetime formatted as an ISO 8601 string (YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ss.sss+hh:mm)"
-                endDatetime:
-                  type: string
-                  format: date-time
-                  description: "End datetime formatted as an ISO 8601 string (YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ss.sss+hh:mm)"
-            examples:
-              Entry:
-                value:
-                  startDatetime: "2023-07-15T12:05:35-06:00"
-                  endDatetime: "2023-07-15T15:55:22-06:00"
+            example:
+              startDatetime: "2023-07-19T15:00:35-06:00"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ClientTimesheetRecord"
+                $ref: "#/components/schemas/Timesheet-Record"
               examples:
                 Suk Deep's Saturday Entry:
                   value:
                     username: "Suk Deep"
-                    startDatetime: "2023-07-15T12:05:35-06:00"
-                    endDatetime: "2023-07-15T15:55:22-06:00"
-                    totalTime: "03:45"
-                    status: "Pending"
+                    startDatetime: "2023-07-19T15:00:35-06:00"
+                    status: "CLOCKED IN"
         "400":
           description: "Bad Request"
           content:
@@ -191,26 +142,87 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
               examples:
-                Missing Username:
+                Invalid Datetime:
+                  value:
+                    errors:
+                      - type: "invalid_string"
+                        message: "Invalid datetime format. Expected ISO 8601 format."
+                        code: 400
+                        data:
+                          path: ["startDatetime"]
+                Missing Required Parameter:
                   value:
                     errors:
                       - type: "invalid_type"
-                        message: "Username is required"
+                        message: "Required"
                         code: 400
                         data:
-                          path: ["username"]
-                          expected: string
-                          received: undefined
-                Missing Password:
-                  value:
-                    errors:
-                      - type: "invalid_type"
-                        message: "Password is required"
-                        code: 400
-                        data:
-                          path: ["password"]
-                          expected: string
-                          received: undefined
+                          path: ["startDatetime"]
+        "409":
+          description: "Conflict - You are already clocked in"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errors:
+                  - type: "CLOCK_IN_ERROR"
+                    message: "You are already clocked in"
+                    code: 409
+                    data:
+                      "clockedInRecord":
+                        "username": "Suk Deep"
+                        "date": "2023-07-15"
+                        "startTime": "12:05"
+                        "status": "CLOCKED IN"
+                      "clockInIndex": 26
+
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/v1/user/clock-out:
+    post:
+      description: "Clock out user"
+      operationId: "clock-out"
+      tags:
+        - "Authenticated"
+      security:
+        - BasicAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endDatetime:
+                  type: string
+                  format: date-time
+                  description: "End datetime formatted as an ISO 8601 string (YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ss.sss+hh:mm)"
+                totalTime:
+                  type: string
+                  description: "Total time formatted as HH:mm"
+            example:
+              endDatetime: "2023-07-19T20:00:35-06:00"
+              totalTime: "05:00"
+      responses:
+        "200":
+          description: "Clocked Out Successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Timesheet-Record"
+              example:
+                username: "Suk Deep"
+                startDatetime: "2023-07-19T21:00:00.000Z"
+                endDatetime: "2023-07-19T20:00:35-06:00"
+                totalTime: "05:00"
+                status: "PENDING APPROVAL"
+        "400":
+          description: "Bad Request"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
                 Different Start and End Date:
                   value:
                     errors:
@@ -230,32 +242,30 @@ paths:
                   value:
                     errors:
                       - type: "invalid_string"
-                        message: "Invalid datetime"
+                        message: "Invalid datetime format. Expected ISO 8601 format."
                         code: 400
                         data:
                           path: ["startDatetime"]
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                Invalid Credentials:
+                Missing Required Parameter:
                   value:
                     errors:
-                      - type: "invalid_credentials"
-                        message: "Invalid credentials"
-                        code: 401
-
+                      - type: "invalid_type"
+                        message: "Required"
+                        code: 400
+                        data:
+                          path: ["endDatetime"]
 components:
   securitySchemes:
     BasicAuth:
       type: http
       scheme: basic
   schemas:
-    ClientTimesheetRecord:
+    Timesheet-Record:
       type: object
+      required:
+        - "username"
+        - "startDatetime"
+        - "status"
       properties:
         username:
           type: string
@@ -291,16 +301,34 @@ components:
               type:
                 type: string
                 description: "Error type"
-                example: "google_sheets_error"
               message:
                 type: string
                 description: "User friendly error message"
-                example: "Quota exceed for quota metic 'Read requests' and limit 'Read requests per minute per user' of service 'sheets.googleapis.com' for consumer 'project_number:540482099890'."
               code:
                 type: integer
                 description: "Error code"
-                example: 429
+                example: 400
               data:
                 type: object
                 description: "Additional error data"
                 nullable: true
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            Invalid-Credentials:
+              value:
+                errors:
+                  - type: "Invalid Credentials"
+                    message: "Invalid username or password"
+                    code: 401
+            Invalid Credentials:
+              value:
+                errors:
+                  - type: "invalid_credentials"
+                    message: "Invalid credentials"
+                    code: 401
