@@ -1,14 +1,16 @@
-openapi: "3.0.2"
+openapi: "3.1.0"
 info:
-  title: API Title
+  title: Timeey Server
   version: "1.0"
 servers:
+  - url: https://pamnani-time-server-jxze5dvqeq-uc.a.run.app/
+    description: "Cloud Run Server"
   - url: http://localhost:3000
+    description: "Local Development"
 paths:
   /api/v1/verify-credentials:
     post:
       operationId: "verify-credentials"
-      description: ""
       security:
         - BasicAuth: []
       responses:
