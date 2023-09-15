@@ -66,6 +66,7 @@ const expandTimesheetRecord = (
       endTime,
       totalTime: condensedRecord.totalTime,
       status: condensedRecord.status,
+      comments: condensedRecord.comments,
     });
   } else {
     const { date: startDate, time: startTime } = separateDateAndTime(
@@ -77,6 +78,7 @@ const expandTimesheetRecord = (
       date: startDate,
       startTime,
       status: condensedRecord.status,
+      comments: condensedRecord.comments,
     });
   }
 };
@@ -97,6 +99,7 @@ const condenseTimesheetRecord = (
       ),
       totalTime: expandedRecord.totalTime,
       status: expandedRecord.status,
+      comments: expandedRecord.comments,
     };
   } else {
     return {
@@ -106,6 +109,7 @@ const condenseTimesheetRecord = (
         expandedRecord.startTime
       ),
       status: expandedRecord.status,
+      comments: expandedRecord.comments,
     };
   }
 };

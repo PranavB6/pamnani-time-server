@@ -6,7 +6,7 @@ async function main(): Promise<void> {
   await googleSheetsDatabase.connect();
 
   const app = createApp();
-  const port = 3000;
+  const port = 8000;
 
   app.listen(port, () => {
     console.log(`🚀 Server listening at http://localhost:${port}`);

@@ -20,6 +20,7 @@ const expandedTimesheetRecordSchema = z
     endTime: z.string().trim().optional().transform(emptyStringToUndefined),
     totalTime: z.string().trim().optional().transform(emptyStringToUndefined),
     status: z.string().trim(),
+    comments: z.string().trim().optional().transform(emptyStringToUndefined),
   })
   .refine(
     (data) => {

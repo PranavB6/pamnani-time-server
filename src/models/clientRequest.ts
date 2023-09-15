@@ -19,6 +19,7 @@ const clientClockOutRequestSchema = z.object({
     })
     .trim(),
   totalTime: z.string().trim(),
+  comments: z.string().trim(),
 });
 
 type ClientClockInRequest = z.infer<typeof clientClockInRequestSchema>;

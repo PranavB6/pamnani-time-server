@@ -6,6 +6,7 @@ const condensedTimesheetRecordSchema = z.object({
   endDatetime: z.string().trim().optional(),
   totalTime: z.string().trim().optional(),
   status: z.string().trim(),
+  comments: z.string().trim().optional(),
 });
 
 type CondensedTimesheetRecord = z.infer<typeof condensedTimesheetRecordSchema>;

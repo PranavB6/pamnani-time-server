@@ -48,9 +48,14 @@ router.get(
 
     logger.verbose(`🍑 Got ${res.locals.user.username}'s timesheet records`);
 
-    const response: CondensedTimesheetRecord[] = userTimesheet.map(
-      condenseTimesheetRecord
-    );
+    const response: CondensedTimesheetRecord[] = userTimesheet
+      .map(condenseTimesheetRecord)
+      .sort((a, b) => {
+        return (
+          new Date(b.startDatetime).getTime() -
+          new Date(a.startDatetime).getTime()
+        );
+      });
 
     logger.verbose(`🍑 Mapped ${res.locals.user.username}'s timesheet records`);
     logger.info(`🍑 Returning ${res.locals.user.username}'s timesheet records`);
@@ -99,6 +104,7 @@ router.post(
         endDatetime: undefined,
         totalTime: undefined,
         status: "CLOCKED IN",
+        comments: undefined,
       });
 
     logger.debug(

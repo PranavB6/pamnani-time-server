@@ -54,7 +54,7 @@ const TimeeySheetsApi = {
     logger.verbose("🐵 Getting Timesheet Records from Google Sheets");
     const googleSheetsDatabase = new GoogleSheetsDatabase();
     const timesheetSheetData = await googleSheetsDatabase.getRange(
-      `Timesheet!A:F`
+      `Timesheet!A:G`
     );
 
     const records = timesheetSheetData
@@ -68,6 +68,7 @@ const TimeeySheetsApi = {
             endTime: row[3],
             totalTime: row[4],
             status: row[5],
+            comments: row[6],
           });
 
           logger.debug(
@@ -102,10 +103,11 @@ const TimeeySheetsApi = {
         newRow.endTime ?? "",
         newRow.totalTime ?? "",
         newRow.status,
+        newRow.comments ?? "",
       ],
     ];
 
-    await googleSheetsDatabase.appendRange(`Timesheet!A:F`, values);
+    await googleSheetsDatabase.appendRange(`Timesheet!A:G`, values);
     logger.info(`🐵 Appended row to Timesheet`);
   },
 
@@ -124,11 +126,12 @@ const TimeeySheetsApi = {
         updatedRow.endTime ?? "",
         updatedRow.totalTime ?? "",
         updatedRow.status,
+        updatedRow.comments ?? "",
       ],
     ];
 
     await googleSheetsDatabase.setRange(
-      `Timesheet!A${rowIndex + 2}:F${rowIndex + 2}`,
+      `Timesheet!A${rowIndex + 2}:G${rowIndex + 2}`,
       values
     );
 
