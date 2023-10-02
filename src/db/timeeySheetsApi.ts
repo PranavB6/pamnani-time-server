@@ -1,3 +1,4 @@
+import NodeCache from "node-cache";
 import { ZodError } from "zod";
 
 import GoogleSheetsDatabase from "./googleSheetsDatabase";
@@ -9,8 +10,20 @@ import type UserCredentialsRecord from "../models/userCredentialsRecord";
 import { userCredentialsRecordSchema } from "../models/userCredentialsRecord";
 import logger from "../utils/logger";
 
+const cache = new NodeCache({
+  stdTTL: 60, // 1 minute
+});
+
 const TimeeySheetsApi = {
   async getAllUserCredentials(): Promise<UserCredentialsRecord[]> {
+    const cachedUserCredentials: UserCredentialsRecord[] | undefined =
+      cache.get("user-credentials");
+
+    if (cachedUserCredentials != null) {
+      logger.verbose("🐵 Got user credentials from cache");
+      return cachedUserCredentials;
+    }
+
     logger.verbose("🐵 Getting all user credentials from Google Sheets");
 
     const googleSheetsDatabase = new GoogleSheetsDatabase();
@@ -47,6 +60,7 @@ const TimeeySheetsApi = {
       });
 
     logger.info("🐵 Got all User Credential Records from Google Sheets");
+    cache.set("user-credentials", records);
     return records;
   },
 
