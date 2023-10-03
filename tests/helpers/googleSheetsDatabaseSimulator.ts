@@ -1,12 +1,14 @@
 import sinon, { type SinonStub } from "sinon";
 
 import GoogleSheetsDatabase from "../../src/db/googleSheetsDatabase";
+import {
+  loginSheetRange,
+  timesheetSheetRange,
+} from "../../src/db/timeeySheetsApi";
 import { type CondensedTimesheetRecord } from "../../src/models/condensedTimesheetRecord";
 import { isCompleteExpandedTimesheetRecord } from "../../src/models/expandedTimesheetRecord";
+import logger from "../../src/utils/logger";
 import { expandTimesheetRecord } from "../../src/utils/timesheetRecordConverter";
-
-const loginSheetRage = "Login Info!A:B";
-const timesheetSheetRange = "Timesheet!A:F";
 
 class GoogleSheetsDatabaseSimulator {
   private readonly users: string[][];
@@ -16,7 +18,7 @@ class GoogleSheetsDatabaseSimulator {
   constructor() {
     this.users = [["username", "password"]];
     this.timesheetRecords = [
-      ["username", "date", "startTime", "endTime", "totalTime", "status"],
+      ["id", "username", "date", "startTime", "endTime", "totalTime", "status"],
     ];
 
     sinon.replace(
@@ -30,7 +32,9 @@ class GoogleSheetsDatabaseSimulator {
     sinon.replace(
       GoogleSheetsDatabase.prototype,
       "setRange",
-      sinon.fake.resolves(true)
+      async (range: string, values: string[][]) => {
+        logger.debug("🫦🫦🫦");
+      }
     );
 
     sinon.replace(
@@ -39,9 +43,15 @@ class GoogleSheetsDatabaseSimulator {
       sinon.fake.resolves(true)
     );
 
+    // sinon.replace(
+    //   GoogleSheetsDatabase.prototype,
+    //   "getRange",
+    //   sinon.fake.resolves(true)
+    // );
+
     this.getRangeStub = sinon.stub(GoogleSheetsDatabase.prototype, "getRange");
 
-    this.getRangeStub.withArgs(loginSheetRage).resolves(this.users);
+    this.getRangeStub.withArgs(loginSheetRange).resolves(this.users);
 
     this.getRangeStub
       .withArgs(timesheetSheetRange)
@@ -59,6 +69,7 @@ class GoogleSheetsDatabaseSimulator {
 
     if (isCompleteExpandedTimesheetRecord(expandedRecord)) {
       this.timesheetRecords.push([
+        expandedRecord.id,
         expandedRecord.username,
         expandedRecord.date,
         expandedRecord.startTime,
@@ -68,6 +79,7 @@ class GoogleSheetsDatabaseSimulator {
       ]);
     } else {
       this.timesheetRecords.push([
+        expandedRecord.id,
         expandedRecord.username,
         expandedRecord.date,
         expandedRecord.startTime,

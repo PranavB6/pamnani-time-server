@@ -7,7 +7,7 @@ process.env.GOOGLE_APPLICATION_CREDENTIALS =
 
 process.env.GOOGLE_SHEETS_SPREADSHEET_ID = "random-spreadsheet-id";
 
-process.env.SHOW_LOGS_IN_TESTS = "no";
+process.env.CACHE_ENABLED = "false";
 
 if (!(getConfig().env === ENV.TEST)) {
   console.log("Test Setup Failed");

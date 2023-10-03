@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { v4 as uuidv4 } from "uuid";
 
 import {
   type CondensedTimesheetRecord,
@@ -52,6 +53,7 @@ class CondensedTimesheetRecordCreator {
     const totalTime = calculateTotalTime(startDatetime, endDatetime);
 
     this.recordData = {
+      id: uuidv4(),
       username,
       startDatetime,
       endDatetime,

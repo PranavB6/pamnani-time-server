@@ -13,6 +13,7 @@ const clientClockInRequestSchema = z.object({
 });
 
 const clientClockOutRequestSchema = z.object({
+  id: z.string().trim(),
   endDatetime: z
     .string({
       required_error: "End datetime is required",
@@ -27,11 +28,7 @@ const clientClockOutRequestSchema = z.object({
       required_error: "Total time is required",
     })
     .trim(),
-  comments: z
-    .string({
-      required_error: "Comments is required (but can be an empty string)",
-    })
-    .trim(),
+  comments: z.string().trim().default(""),
 });
 
 type ClientClockInRequest = z.infer<typeof clientClockInRequestSchema>;

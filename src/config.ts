@@ -9,6 +9,7 @@ function getConfig(): Config {
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
     },
     showLogsInTests: stringToBoolean(process.env.SHOW_LOGS_IN_TESTS),
+    cacheEnabled: stringToBoolean(process.env.CACHE_ENABLED),
   });
 }
 
@@ -48,6 +49,11 @@ const configSchema = z
         invalid_type_error: "showLogs must be a boolean",
       })
       .default(false),
+    cacheEnabled: z
+      .boolean({
+        invalid_type_error: "cacheEnabled must be a boolean",
+      })
+      .default(true),
   })
   .strict(); // don't allow additional properties
 

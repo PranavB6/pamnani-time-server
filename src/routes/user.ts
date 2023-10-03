@@ -1,4 +1,5 @@
 import { type Request, type Response, Router } from "express";
+import { v4 as uuidv4 } from "uuid";
 
 import TimeeySheetsApi from "../db/timeeySheetsApi";
 import auth from "../middlewares/auth";
@@ -17,6 +18,7 @@ import TimeeyError from "../models/TimeeyError";
 import type UserCredentialsRecord from "../models/userCredentialsRecord";
 import expressAsyncHandler from "../utils/expressAsyncHandler";
 import logger from "../utils/logger";
+import sortTimesheetRecords from "../utils/sortTimesheetRecords";
 import {
   condenseTimesheetRecord,
   expandTimesheetRecord,
@@ -48,16 +50,13 @@ router.get(
 
     logger.verbose(`🍑 Got ${res.locals.user.username}'s timesheet records`);
 
-    const response: CondensedTimesheetRecord[] = userTimesheet
-      .map(condenseTimesheetRecord)
-      .sort((a, b) => {
-        return (
-          new Date(b.startDatetime).getTime() -
-          new Date(a.startDatetime).getTime()
-        );
-      });
+    const response: CondensedTimesheetRecord[] = sortTimesheetRecords(
+      userTimesheet.map(condenseTimesheetRecord)
+    );
 
-    logger.verbose(`🍑 Mapped ${res.locals.user.username}'s timesheet records`);
+    logger.verbose(
+      `🍑 Mapped and sorted ${res.locals.user.username}'s timesheet records`
+    );
     logger.info(`🍑 Returning ${res.locals.user.username}'s timesheet records`);
     res.json(response);
   })
@@ -99,6 +98,7 @@ router.post(
 
     const newCondensedRecord: CondensedTimesheetRecord =
       condensedTimesheetRecordSchema.parse({
+        id: uuidv4(),
         username: res.locals.user.username,
         startDatetime: clockInRequest.startDatetime,
         endDatetime: undefined,
@@ -139,23 +139,16 @@ router.post(
       `🍑 Processing clock-out request for user: '${res.locals.user.username}'`
     );
 
-    logger.verbose(`🍑 Checking if user is already clocked in`);
-    const data = await findClockedInTimesheetRecord(res.locals.user.username);
-
-    if (data == null) {
-      logger.error(`🍑 User: '${res.locals.user.username}' is not clocked in`);
-      throw TimeeyError.fromObject({
-        type: "CLOCK_OUT_ERROR",
-        message: "You are not clocked in",
-        code: StatusCodes.CONFLICT,
-      });
-    }
-    const { record: oldRecord, index: oldRecordIndex } = data;
-    logger.verbose(`🍑 Got ${res.locals.user.username}'s clock-in record`);
-    logger.debug(`🍑 Clock-in Timesheet record: ${JSON.stringify(oldRecord)}`);
-
     const clockOutInfo = clientClockOutRequestSchema.parse(req.body);
     logger.verbose(`🍑 Parsed ${res.locals.user.username}'s clock-out request`);
+
+    logger.verbose(`🍑 Getting Timesheet Record`);
+    const [oldRecord] = await TimeeySheetsApi.getTimesheetRecordById(
+      clockOutInfo.id
+    );
+
+    logger.verbose(`🍑 Got ${res.locals.user.username}'s clock-in record`);
+    logger.debug(`🍑 Clock-in Timesheet record: ${JSON.stringify(oldRecord)}`);
 
     const newRecord: CondensedTimesheetRecord =
       condensedTimesheetRecordSchema.parse({
@@ -182,7 +175,7 @@ router.post(
       )}`
     );
 
-    await TimeeySheetsApi.updateTimesheet(oldRecordIndex, newTimesheetRecord);
+    await TimeeySheetsApi.updateTimesheet(newTimesheetRecord);
 
     logger.info(
       `🍑 Returning clock-out response for user: '${res.locals.user.username}'`

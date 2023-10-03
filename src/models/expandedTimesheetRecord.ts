@@ -14,6 +14,7 @@ const emptyStringToUndefined = (value?: string): string | undefined => {
 
 const expandedTimesheetRecordSchema = z
   .object({
+    id: z.string().trim(),
     username: z.string().trim(),
     date: z.string().trim(),
     startTime: z.string().trim(),

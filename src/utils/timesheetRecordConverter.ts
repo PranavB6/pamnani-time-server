@@ -60,6 +60,7 @@ const expandTimesheetRecord = (
     }
 
     return expandedTimesheetRecordSchema.parse({
+      id: condensedRecord.id,
       username: condensedRecord.username,
       date: startDate,
       startTime,
@@ -74,6 +75,7 @@ const expandTimesheetRecord = (
     );
 
     return expandedTimesheetRecordSchema.parse({
+      id: condensedRecord.id,
       username: condensedRecord.username,
       date: startDate,
       startTime,
@@ -88,6 +90,7 @@ const condenseTimesheetRecord = (
 ): CondensedTimesheetRecord => {
   if (isCompleteExpandedTimesheetRecord(expandedRecord)) {
     return {
+      id: expandedRecord.id,
       username: expandedRecord.username,
       startDatetime: combineDateAndTime(
         expandedRecord.date,
@@ -103,6 +106,7 @@ const condenseTimesheetRecord = (
     };
   } else {
     return {
+      id: expandedRecord.id,
       username: expandedRecord.username,
       startDatetime: combineDateAndTime(
         expandedRecord.date,

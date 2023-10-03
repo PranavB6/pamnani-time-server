@@ -33,7 +33,7 @@ const shouldSilenceGoogleCloudLogger = (): boolean => {
 };
 
 const logger = winston.createLogger({
-  level: "debug",
+  level: "silly",
   format: winston.format.cli(),
   transports: [
     new winston.transports.Console({

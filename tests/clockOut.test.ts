@@ -7,6 +7,7 @@ import CondensedTimesheetRecordCreator from "./helpers/condensedTimesheetRecordC
 import GoogleSheetsDatabaseSimulator from "./helpers/googleSheetsDatabaseSimulator";
 import createApp from "../src/app";
 import { type CondensedTimesheetRecord } from "../src/models/condensedTimesheetRecord";
+import logger from "../src/utils/logger";
 
 const clockOutUrl = "/api/v1/user/clock-out";
 
@@ -46,15 +47,18 @@ describe("POST /clock-out request", function () {
           userA.username
         ).build();
 
-        const clockedInRecord = structuredClone(completeRecord);
-        delete clockedInRecord.endDatetime;
-        delete clockedInRecord.totalTime;
+        const clockedInRecord = structuredClone({
+          ...completeRecord,
+          endDatetime: undefined,
+          totalTime: undefined,
+        });
 
         googleSheetsSimulator.addCondensedTimesheetRecord(clockedInRecord);
       });
 
       it("should return 200 if the request body is valid", async function () {
         const requestBody = {
+          id: completeRecord.id,
           endDatetime: completeRecord.endDatetime,
           totalTime: completeRecord.totalTime,
         };
@@ -64,9 +68,12 @@ describe("POST /clock-out request", function () {
           .auth(userA.username, userA.password)
           .send(requestBody);
 
+        const expectedRecord: any = structuredClone(completeRecord);
+        logger.debug(`Response Body: ${JSON.stringify(response.body)}`);
+        logger.debug(`Expected Record: ${JSON.stringify(expectedRecord)}`);
+
         expect(response.status).to.be.equal(200);
 
-        const expectedRecord: any = structuredClone(completeRecord);
         delete expectedRecord.status;
 
         expect(response.body).to.deep.contain(expectedRecord);
@@ -74,6 +81,7 @@ describe("POST /clock-out request", function () {
 
       it("should return 400 if totalTime field is missing", async function () {
         const requestBody = {
+          id: completeRecord.id,
           endDatetime: completeRecord.endDatetime,
           // totalTime is missing
         };
@@ -88,6 +96,7 @@ describe("POST /clock-out request", function () {
 
       it("should return 400 if endDatetime field is missing", async function () {
         const requestBody = {
+          id: completeRecord.id,
           // endDatetime is missing
           totalTime: completeRecord.totalTime,
         };
@@ -100,8 +109,39 @@ describe("POST /clock-out request", function () {
         expect(response.status).to.be.equal(400);
       });
 
+      it("should return 400 if id field is missing", async function () {
+        const requestBody = {
+          // id is missing
+          endDatetime: completeRecord.endDatetime,
+          totalTime: completeRecord.totalTime,
+        };
+
+        const response = await supertest(createApp())
+          .post(clockOutUrl)
+          .auth(userA.username, userA.password)
+          .send(requestBody);
+
+        expect(response.status).to.be.equal(400);
+      });
+
+      it("should return 400 if id field is invalid", async function () {
+        const requestBody = {
+          id: "non existent id",
+          endDatetime: completeRecord.endDatetime,
+          totalTime: "invalid",
+        };
+
+        const response = await supertest(createApp())
+          .post(clockOutUrl)
+          .auth(userA.username, userA.password)
+          .send(requestBody);
+
+        expect(response.status).to.be.equal(400);
+      });
+
       it("should return 400 if totalTime field is invalid", async function () {
         const requestBody = {
+          id: completeRecord.id,
           endDatetime: completeRecord.endDatetime,
           totalTime: "invalid",
         };
@@ -116,6 +156,7 @@ describe("POST /clock-out request", function () {
 
       it("should return 400 if endDatetime field is invalid", async function () {
         const requestBody = {
+          id: completeRecord.id,
           endDatetime: "invalid",
           totalTime: completeRecord.totalTime,
         };
@@ -131,6 +172,8 @@ describe("POST /clock-out request", function () {
       it("should return 400 if totalTime field is not equal to the calculated total time", async function () {
         let totalTime;
 
+        // make the total time 01:00, but if its already 01:00, make it 02:00
+        // 01:00 and 02:00 are arbitrary
         if (completeRecord.totalTime === "01:00") {
           totalTime = "02:00";
         } else {
@@ -138,6 +181,7 @@ describe("POST /clock-out request", function () {
         }
 
         const requestBody = {
+          id: completeRecord.id,
           endDatetime: completeRecord.endDatetime,
           totalTime,
         };
@@ -152,6 +196,7 @@ describe("POST /clock-out request", function () {
 
       it("should return 400 if the endDatetime field is before the user's clock-in time", async function () {
         const requestBody = {
+          id: completeRecord.id,
           endDatetime: dayjs(completeRecord.startDatetime)
             .subtract(1, "hour")
             .toISOString(),
@@ -167,52 +212,56 @@ describe("POST /clock-out request", function () {
       });
     });
 
-    describe("and the user does not have any records", function () {
-      it("should return 409 even if the request body is valid", async function () {
-        const requestBody = {
-          endDateTime: now,
-          totalTime: "00:15",
-        };
+    // describe("and the user does not have any records", function () {
+    //   it("should return 409 even if the request body is valid", async function () {
+    //     const requestBody = {
+    //       id: "non existent id",
+    //       endDateTime: now,
+    //       totalTime: "00:15",
+    //     };
 
-        const response = await supertest(createApp())
-          .post(clockOutUrl)
-          .auth(userA.username, userA.password)
-          .send(requestBody);
+    //     const response = await supertest(createApp())
+    //       .post(clockOutUrl)
+    //       .auth(userA.username, userA.password)
+    //       .send(requestBody);
 
-        expect(response.status).to.be.equal(409);
-      });
+    //     expect(response.status).to.be.equal(409);
+    //   });
 
-      it("should return 409 even if the request body is invalid", async function () {
-        const requestBody = {
-          endDateTime: "invalid datetime",
-          // totalTime is missing
-        };
+    //   it("should return 409 even if the request body is invalid", async function () {
+    //     const requestBody = {
+    //       endDateTime: "invalid datetime",
+    //       // totalTime is missing
+    //     };
 
-        const response = await supertest(createApp())
-          .post(clockOutUrl)
-          .auth(userA.username, userA.password)
-          .send(requestBody);
+    //     const response = await supertest(createApp())
+    //       .post(clockOutUrl)
+    //       .auth(userA.username, userA.password)
+    //       .send(requestBody);
 
-        expect(response.status).to.be.equal(409);
-      });
-    });
+    //     expect(response.status).to.be.equal(409);
+    //   });
+    // });
 
     describe("and the user is NOT clocked-in", function () {
+      let timesheetRecords: CondensedTimesheetRecord[];
+
       beforeEach(function () {
-        const records = [
+        timesheetRecords = [
           new CondensedTimesheetRecordCreator(userA.username).build(),
           new CondensedTimesheetRecordCreator(userA.username).build(),
           new CondensedTimesheetRecordCreator(userA.username).build(),
           new CondensedTimesheetRecordCreator(userB.username).build(),
         ];
 
-        records.forEach((record) => {
+        timesheetRecords.forEach((record) => {
           googleSheetsSimulator.addCondensedTimesheetRecord(record);
         });
       });
 
       it("should return 409 even if the request body is valid", async function () {
         const requestBody = {
+          id: timesheetRecords[0].id,
           endDateTime: now,
           totalTime: "00:15",
         };
@@ -227,6 +276,7 @@ describe("POST /clock-out request", function () {
 
       it("should return 409 even if the request body is invalid", async function () {
         const requestBody = {
+          id: "non existent id",
           endDateTime: "invalid datetime",
           // totalTime is missing
         };

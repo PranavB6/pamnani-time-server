@@ -6,6 +6,7 @@ import CondensedTimesheetRecordCreator from "./helpers/condensedTimesheetRecordC
 import GoogleSheetsDatabaseSimulator from "./helpers/googleSheetsDatabaseSimulator";
 import createApp from "../src/app";
 import { type CondensedTimesheetRecord } from "../src/models/condensedTimesheetRecord";
+import sortTimesheetRecords from "../src/utils/sortTimesheetRecords";
 
 const historyUrl = "/api/v1/user/history";
 
@@ -73,14 +74,25 @@ describe("GET /history request", function () {
     });
 
     describe("when the database has multiple compete timesheet records", function () {
+      let userATimesheetRecords: CondensedTimesheetRecord[];
+      let userBTimesheetRecords: CondensedTimesheetRecord[];
       let timesheetRecords: CondensedTimesheetRecord[];
 
       beforeEach(function () {
-        timesheetRecords = [
+        userATimesheetRecords = sortTimesheetRecords([
           new CondensedTimesheetRecordCreator(userA.username).build(),
+          new CondensedTimesheetRecordCreator(userA.username).build(),
+        ]);
+
+        userBTimesheetRecords = sortTimesheetRecords([
           new CondensedTimesheetRecordCreator(userB.username).build(),
-          new CondensedTimesheetRecordCreator(userA.username).build(),
-        ];
+          new CondensedTimesheetRecordCreator(userB.username).build(),
+        ]);
+
+        timesheetRecords = sortTimesheetRecords([
+          ...userATimesheetRecords,
+          ...userBTimesheetRecords,
+        ]);
 
         timesheetRecords.forEach((record) => {
           googleSheetsSimulator.addCondensedTimesheetRecord(record);
@@ -93,10 +105,7 @@ describe("GET /history request", function () {
           .auth(userA.username, userA.password);
 
         expect(response.status).to.be.equal(200);
-        expect(response.body).to.be.deep.equal([
-          timesheetRecords[0],
-          timesheetRecords[2],
-        ]);
+        expect(response.body).to.be.deep.equal(userATimesheetRecords);
       });
 
       it("should return 200 with a the records for the current user B", async function () {
@@ -105,23 +114,33 @@ describe("GET /history request", function () {
           .auth(userB.username, userB.password);
 
         expect(response.status).to.be.equal(200);
-        expect(response.body).to.be.deep.equal([timesheetRecords[1]]);
+        expect(response.body).to.be.deep.equal(userBTimesheetRecords);
       });
     });
 
     describe("when the database has clocked in and complete timesheet records", function () {
+      let userATimesheetRecords: CondensedTimesheetRecord[];
+      let userBTimesheetRecords: CondensedTimesheetRecord[];
       let timesheetRecords: CondensedTimesheetRecord[];
 
       beforeEach(function () {
-        timesheetRecords = [
+        userATimesheetRecords = sortTimesheetRecords([
           new CondensedTimesheetRecordCreator(userA.username)
             .makeClockIn()
             .build(),
+          new CondensedTimesheetRecordCreator(userA.username).build(),
+        ]);
+
+        userBTimesheetRecords = sortTimesheetRecords([
           new CondensedTimesheetRecordCreator(userB.username)
             .makeClockIn()
             .build(),
-          new CondensedTimesheetRecordCreator(userA.username).build(),
-        ];
+        ]);
+
+        timesheetRecords = sortTimesheetRecords([
+          ...userATimesheetRecords,
+          ...userBTimesheetRecords,
+        ]);
 
         timesheetRecords.forEach((record) => {
           googleSheetsSimulator.addCondensedTimesheetRecord(record);
@@ -134,10 +153,7 @@ describe("GET /history request", function () {
           .auth(userA.username, userA.password);
 
         expect(response.status).to.be.equal(200);
-        expect(response.body).to.be.deep.equal([
-          timesheetRecords[0],
-          timesheetRecords[2],
-        ]);
+        expect(response.body).to.be.deep.equal(userATimesheetRecords);
       });
 
       it("should return 200 with a the records for the current user B", async function () {
@@ -146,7 +162,7 @@ describe("GET /history request", function () {
           .auth(userB.username, userB.password);
 
         expect(response.status).to.be.equal(200);
-        expect(response.body).to.be.deep.equal([timesheetRecords[1]]);
+        expect(response.body).to.be.deep.equal(userBTimesheetRecords);
       });
     });
   });

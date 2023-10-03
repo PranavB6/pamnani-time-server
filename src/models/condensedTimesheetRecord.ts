@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const condensedTimesheetRecordSchema = z.object({
+  id: z.string().trim(),
   username: z.string().trim(),
   startDatetime: z.string().trim(),
   endDatetime: z.string().trim().optional(),
