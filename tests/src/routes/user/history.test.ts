@@ -63,7 +63,7 @@ describe('GET /user/history', function () {
           .auth(userA.username, userA.password)
 
         expect(response.status).to.be.equal(200)
-        expect(response.body).to.be.deep.equal([])
+        expect(response.body.userTimesheet).to.be.deep.equal([])
       })
     })
 
@@ -92,7 +92,7 @@ describe('GET /user/history', function () {
 
         const expectedResponse =
           googleSheetsDatabaseSimulator.getUserTimesheetRecords(userB.username)
-        expect(response.body).to.be.eql(expectedResponse)
+        expect(response.body.userTimesheet).to.be.eql(expectedResponse)
       })
     })
   })
