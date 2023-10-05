@@ -1,192 +1,140 @@
-import NodeCache from "node-cache";
-import { ZodError } from "zod";
+import { ZodError } from 'zod'
 
-import GoogleSheetsDatabase from "./googleSheetsDatabase";
-import getConfig from "../config";
-import type ExpandedTimesheetRecord from "../models/expandedTimesheetRecord";
-import { expandedTimesheetRecordSchema } from "../models/expandedTimesheetRecord";
-import StatusCodes from "../models/statusCodes";
-import TimeeyError from "../models/TimeeyError";
-import type UserCredentialsRecord from "../models/userCredentialsRecord";
-import { userCredentialsRecordSchema } from "../models/userCredentialsRecord";
-import logger from "../utils/logger";
+import getGoogleSheetsDatabase from './googleSheetsDatabase'
+import Converter from '../converters'
+import logger from '../logger'
+import ErrorType from '../models/errorType'
+import type GoogleSheetsRow from '../models/googleSheetsRow'
+import TimeeyError from '../models/timeeyError'
+import type TimesheetRecord from '../models/timesheetRecord'
+import { isClockedInRecord } from '../models/timesheetRecord'
+import type UserCredentials from '../models/userCredentials'
 
-export const loginSheetRange = "Login Info!A:B";
-export const timesheetSheetRange = "Timesheet!A:H";
-const startColumn = "A";
-const endColumn = "H";
+const loginSheetRange = 'Login Info!A:B'
+const timesheetRange = 'Timesheet 2!A:H'
+const calcTimesheetRowRange = (index: number): string =>
+  `Timesheet 2!A${index}:H${index}`
 
-const cache = new NodeCache({
-  stdTTL: getConfig().cacheEnabled
-    ? 60 // default TTL for all keys in seconds - 1 minute
-    : -1, // 0 means never expire, -1 means always expire
-});
+const createParsingError = (
+  error: unknown,
+  row: GoogleSheetsRow,
+  index: number
+): TimeeyError => {
+  return new TimeeyError({
+    type: ErrorType.PARSING_ERROR,
+    message: `Could not parse Google Sheets row: ${index + 2}`,
+    data: {
+      rowData: row,
+      error: error instanceof ZodError ? error.issues : error,
+    },
+  })
+}
 
 const TimeeySheetsApi = {
-  async getAllUserCredentials(): Promise<UserCredentialsRecord[]> {
-    const cachedUserCredentials: UserCredentialsRecord[] | undefined =
-      cache.get("user-credentials");
+  async getAllUserCredentials(): Promise<UserCredentials[]> {
+    logger.verbose('🦍 Getting all user credentials from Google Sheets...')
+    const googleSheetsDatabase = getGoogleSheetsDatabase()
+    const loginSheetValues =
+      await googleSheetsDatabase.getRange(loginSheetRange)
 
-    if (cachedUserCredentials != null) {
-      logger.verbose("🐵 Got user credentials from cache");
-      return cachedUserCredentials;
-    }
-
-    logger.verbose("🐵 Getting all user credentials from Google Sheets");
-
-    const googleSheetsDatabase = new GoogleSheetsDatabase();
-    const loginSheetData = await googleSheetsDatabase.getRange(loginSheetRange);
-
-    const records = loginSheetData
+    const allUserCredentials = loginSheetValues
       .slice(1) // skip the first row - the headings
       .map((row, index) => {
         try {
-          const record = userCredentialsRecordSchema.parse({
-            username: row[0],
-            password: row[1],
-          });
-
-          logger.debug(
-            `🐵 Parsed User Credentials Record ${index + 1}: ${JSON.stringify(
-              record
-            )}`
-          );
-
-          return record;
+          return Converter.fromGoogleSheetsRow(row).toUserCredentials()
         } catch (error: unknown) {
-          throw TimeeyError.fromObject({
-            type: "Google Sheets Parsing Error",
-            message: `Error parsing user credentials record from row: ${
-              index + 2 // +2 because we skipped the first row and google sheets is 1-indexed
-            }`,
-            code: StatusCodes.INTERNAL_SERVER_ERROR,
-            data: error instanceof ZodError ? error.issues : error,
-          });
+          throw createParsingError(error, row, index)
         }
-      });
+      })
 
-    logger.info("🐵 Got all User Credential Records from Google Sheets");
-    cache.set("user-credentials", records);
-    return records;
+    logger.info('🦍 ... Got all user credentials')
+    logger.debug(
+      `🦍 Received user credentials: ${JSON.stringify(allUserCredentials)}`
+    )
+    return allUserCredentials
   },
 
-  async getTimesheet(): Promise<ExpandedTimesheetRecord[]> {
-    logger.verbose("🐵 Getting Timesheet Records from Google Sheets");
-    const googleSheetsDatabase = new GoogleSheetsDatabase();
-    const timesheetSheetData = await googleSheetsDatabase.getRange(
-      timesheetSheetRange
-    );
+  async getTimesheet(): Promise<TimesheetRecord[]> {
+    logger.verbose('🦍  Getting timesheet ...')
+    const googleSheetsDatabase = getGoogleSheetsDatabase()
+    const timesheetValues = await googleSheetsDatabase.getRange(timesheetRange)
 
-    const records = timesheetSheetData
-      .splice(1) // skip the first row - the headings
+    const timesheetRecords = timesheetValues
+      .slice(1) // skip the first row - the headings
       .map((row, index) => {
         try {
-          const record = expandedTimesheetRecordSchema.parse({
-            id: row[0],
-            username: row[1],
-            date: row[2],
-            startTime: row[3],
-            endTime: row[4],
-            totalTime: row[5],
-            status: row[6],
-            comments: row[7],
-          });
-
-          logger.debug(
-            `🐵 Parsed Timesheet Record ${index + 1}: ${JSON.stringify(record)}`
-          );
-
-          return record;
+          return Converter.fromGoogleSheetsRow(row).toTimesheetRecord()
         } catch (error: unknown) {
-          throw TimeeyError.fromObject({
-            type: "Google Sheets Parsing Error",
-            message: `Error parsing timesheet record from row: ${
-              index + 2 // +2 because we skipped the first row and google sheets is 1-indexed
-            }`,
-            code: StatusCodes.INTERNAL_SERVER_ERROR,
-            data: error instanceof ZodError ? error.issues : error,
-          });
+          throw createParsingError(error, row, index)
         }
-      });
+      })
 
-    logger.info("🐵 Got Timesheet Records from Google Sheets");
-    return records;
+    logger.info('🦍 ... Got timesheet')
+    logger.debug(`🦍  Received timesheet: ${JSON.stringify(timesheetRecords)}`)
+    return timesheetRecords
   },
 
-  async getTimesheetRecordById(
-    id: string
-  ): Promise<[ExpandedTimesheetRecord, number]> {
-    logger.verbose(`🐵 Getting Timesheet Record with id: ${id}`);
-    const timesheet = await TimeeySheetsApi.getTimesheet();
-    logger.debug(`IN GET TIMESHEET RECORD BY ID ${JSON.stringify(timesheet)}`);
-    const rowNumber = timesheet.findIndex((row) => row.id === id);
+  async appendTimesheet(newRecord: TimesheetRecord): Promise<void> {
+    logger.verbose('🦍 Appending timesheet ...')
 
-    if (rowNumber === -1) {
-      throw TimeeyError.fromObject({
-        type: "Timesheet Record Not Found",
-        message: `Timesheet record with id: '${id}' not found`,
-        code: StatusCodes.NOT_FOUND,
-      });
+    const newValues =
+      Converter.fromTimesheetRecord(newRecord).toGoogleSheetsRow()
+
+    const googleSheetsDatabase = getGoogleSheetsDatabase()
+    await googleSheetsDatabase.appendRange(timesheetRange, [newValues])
+
+    logger.info('🦍 ... Appended timesheet in Google Sheets')
+  },
+
+  async updateTimesheet(updatedRecord: TimesheetRecord): Promise<void> {
+    logger.verbose('🦍 Updating timesheet ...')
+
+    const timesheet = await this.getTimesheet()
+    const recordIndex = timesheet.findIndex(
+      (record) => record.id === updatedRecord.id
+    )
+
+    if (recordIndex === -1) {
+      throw new TimeeyError({
+        type: ErrorType.TIMESHEET_RECORD_NOT_FOUND,
+        message: `Timesheet record with id '${updatedRecord.id}' not found`,
+        data: updatedRecord,
+      })
     }
 
-    logger.info(`🐵 Got Timesheet Record with id: ${id}`);
-    return [timesheet[rowNumber], rowNumber];
+    const range = calcTimesheetRowRange(recordIndex + 2)
+
+    const updatedValues =
+      Converter.fromTimesheetRecord(updatedRecord).toGoogleSheetsRow()
+
+    const googleSheetsDatabase = getGoogleSheetsDatabase()
+    await googleSheetsDatabase.setRange(range, [updatedValues])
+
+    logger.info('🦍 ... Updated timesheet')
   },
 
-  async appendTimesheet(newRow: ExpandedTimesheetRecord): Promise<void> {
-    logger.verbose(`🐵 Appending row to Timesheet`);
-    const googleSheetsDatabase = new GoogleSheetsDatabase();
-    const values = [
-      [
-        newRow.id,
-        newRow.username,
-        newRow.date,
-        newRow.startTime,
-        newRow.endTime ?? "",
-        newRow.totalTime ?? "",
-        newRow.status,
-        newRow.comments ?? "",
-      ],
-    ];
+  async getClockInTimesheetRecord(
+    username: string
+  ): Promise<TimesheetRecord | null> {
+    logger.verbose(`🦍 Getting clock-in timesheet record for ${username} ...`)
 
-    await googleSheetsDatabase.appendRange(timesheetSheetRange, values);
-    logger.info(`🐵 Appended row to Timesheet`);
+    const timesheet = await this.getTimesheet()
+    const matchingRecord = timesheet.find(
+      (record) => record.username === username && isClockedInRecord(record)
+    )
+
+    if (matchingRecord == null) {
+      logger.warn(`🦍 No clock-in timesheet record found for ${username}`)
+      return null
+    }
+
+    logger.info(`🦍 ... Got clock-in timesheet record for ${username}`)
+    logger.debug(
+      `🦍 Received clock-in timesheet record: ${JSON.stringify(matchingRecord)}`
+    )
+    return matchingRecord
   },
+}
 
-  async updateTimesheet(updatedRow: ExpandedTimesheetRecord): Promise<void> {
-    logger.verbose(
-      `💦💦💦 Updating row with id: ${updatedRow.id} in Timesheet`
-    );
-
-    const [, rowNumber] = await TimeeySheetsApi.getTimesheetRecordById(
-      updatedRow.id
-    );
-
-    logger.verbose(
-      `🐵 Found row with id: ${updatedRow.id}, row number: ${rowNumber} in Timesheet`
-    );
-
-    const values = [
-      [
-        updatedRow.id,
-        updatedRow.username,
-        updatedRow.date,
-        updatedRow.startTime,
-        updatedRow.endTime ?? "",
-        updatedRow.totalTime ?? "",
-        updatedRow.status,
-        updatedRow.comments ?? "",
-      ],
-    ];
-
-    const googleSheetsDatabase = new GoogleSheetsDatabase();
-    await googleSheetsDatabase.setRange(
-      `Timesheet!${startColumn}${rowNumber + 2}:${endColumn}${rowNumber + 2}`, // +1 because google sheets is 1-indexed, +1 because we skipped the first row
-      values
-    );
-
-    logger.info(`🐵 Updated row ${rowNumber} in Timesheet`);
-  },
-};
-
-export default TimeeySheetsApi;
+export default TimeeySheetsApi
+export { loginSheetRange, timesheetRange }

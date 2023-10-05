@@ -1,16 +1,17 @@
-import createApp from "./app";
-import GoogleSheetsDatabase from "./db/googleSheetsDatabase";
+import createApp from './app'
+import getGoogleSheetsDatabase from './db/googleSheetsDatabase'
 
-async function main(): Promise<void> {
-  const googleSheetsDatabase = new GoogleSheetsDatabase();
-  await googleSheetsDatabase.connect();
+const PORT = 8000
 
-  const app = createApp();
-  const port = 8000;
+const main = async (): Promise<void> => {
+  const googleSheetsDatabase = getGoogleSheetsDatabase()
+  await googleSheetsDatabase.connect()
 
-  app.listen(port, () => {
-    console.log(`🚀 Server listening at http://localhost:${port}`);
-  });
+  const app = createApp()
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server listening at http://localhost:${PORT}`)
+  })
 }
 
-void main();
+void main()

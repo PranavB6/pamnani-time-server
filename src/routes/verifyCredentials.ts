@@ -1,11 +1,16 @@
-import { type Request, type Response, Router } from "express";
+import { type Request, type Response, Router } from 'express'
 
-import auth from "../middlewares/auth";
+import auth from '../middlewares/auth'
+import expressAsyncHandler from '../utils/expressAsyncHandler'
 
-const router = Router();
+const router = Router()
 
-router.post("/", auth, (req: Request, res: Response) => {
-  res.send({ message: "Login successful" });
-});
+router.post(
+  '/',
+  auth,
+  expressAsyncHandler(async (req: Request, res: Response) => {
+    res.send({ message: 'Login successful' })
+  })
+)
 
-export default router;
+export default router

@@ -4,13 +4,13 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci
+RUN npm install
 
 COPY . .
 
-EXPOSE 3000
-
 RUN npm run build
+
+EXPOSE 8000
 
 CMD ["node", "./dist/src/main.js"]
 

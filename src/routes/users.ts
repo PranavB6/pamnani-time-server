@@ -1,26 +1,23 @@
-import { type Request, type Response, Router } from "express";
+import { type Request, type Response, Router } from 'express'
 
-import TimeeySheetsApi from "../db/timeeySheetsApi";
-import expressAsyncHandler from "../utils/expressAsyncHandler";
-import logger from "../utils/logger";
+import TimeeySheetsApi from '../db/timeeySheetsApi'
+import logger from '../logger'
+import expressAsyncHandler from '../utils/expressAsyncHandler'
 
-const router = Router();
+const router = Router()
 
 router.get(
-  "/",
+  '/',
   expressAsyncHandler(async (req: Request, res: Response) => {
-    logger.verbose("🍑 Process request to get users");
+    logger.verbose('💦 Processing request GET /users ...')
 
-    const userCredentials = await TimeeySheetsApi.getAllUserCredentials();
+    const allUserCredentials = await TimeeySheetsApi.getAllUserCredentials()
+    const allUsernames = allUserCredentials.map((user) => user.username)
 
-    const usernames = userCredentials.map(
-      (userCredential) => userCredential.username
-    );
-
-    logger.info(`🍑 Got ${usernames.length} users`);
-
-    res.send(usernames);
+    logger.info('💦 ... Processed request GET /users')
+    logger.debug(`💦 Response: ${JSON.stringify(allUsernames)}`)
+    res.send(allUsernames)
   })
-);
+)
 
-export default router;
+export default router

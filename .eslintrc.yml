@@ -1,0 +1,47 @@
+env:
+  browser: true
+  es2021: true
+plugins:
+  - 'import' # add the "eslint-plugin-import" plugin
+extends:
+  - standard-with-typescript
+  - 'plugin:import/recommended' # for the recommended rule set
+  - 'plugin:import/typescript' # for the typescript rule set
+  - prettier # make sure this is last to have the greatest precedence
+parserOptions:
+  ecmaVersion: latest
+  sourceType: module
+  project: ./tsconfig.json
+rules:
+  sort-imports:
+    - 'error'
+    - # default options
+      'ignoreCase': false
+      'ignoreMemberSort': false
+      'memberSyntaxSortOrder': ['none', 'all', 'multiple', 'single']
+
+      # custom options
+      'ignoreDeclarationSort': true # don"t want to sort import lines, use eslint-plugin-import instead
+      'allowSeparatedGroups': true
+
+  # turn on errors for missing imports
+  import/no-unresolved: 'error'
+  # optionally: turn off errors for named exports that are not exported
+  # (if you get a lot of errors for this, you can turn it off)
+  import/no-named-as-default-member: 'off'
+  import/order:
+    - error
+    - groups:
+        - builtin # Built-in imports (come from NodeJS native) go first
+        - external # <- External imports
+        - internal # <- Absolute imports
+        - - sibling # <- Relative imports, the sibling and parent types they can be mingled together
+          - parent
+        - index # <- index imports
+        - unknown # <- unknown
+      newlines-between: always
+      alphabetize:
+        # sort in ascending order. Options: ["ignore", "asc", "desc"]
+        order: asc
+        # ignore case. Options: [true, false]
+        caseInsensitive: true

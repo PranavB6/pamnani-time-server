@@ -1,13 +1,13 @@
-import { type CondensedTimesheetRecord } from "../models/condensedTimesheetRecord";
+import type TimesheetRecord from '../models/timesheetRecord'
 
 const sortTimesheetRecords = (
-  records: CondensedTimesheetRecord[]
-): CondensedTimesheetRecord[] => {
+  records: TimesheetRecord[]
+): TimesheetRecord[] => {
   return records.sort((a, b) => {
     return (
       new Date(b.startDatetime).getTime() - new Date(a.startDatetime).getTime()
-    );
-  });
-};
+    )
+  })
+}
 
-export default sortTimesheetRecords;
+export default sortTimesheetRecords

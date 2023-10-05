@@ -1,90 +1,93 @@
-import dayjs, { type Dayjs } from "dayjs";
-import duration, { type Duration } from "dayjs/plugin/duration";
-import timezone from "dayjs/plugin/timezone";
-import utc from "dayjs/plugin/utc";
+import dayjs, { type Dayjs } from 'dayjs'
+import duration, { type Duration } from 'dayjs/plugin/duration'
+import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc'
 
-import StatusCodes from "../models/statusCodes";
-import TimeeyError from "../models/TimeeyError";
+import ErrorType from '../models/errorType'
+import StatusCode from '../models/statusCode'
+import TimeeyError from '../models/timeeyError'
 
-dayjs.extend(duration);
-dayjs.extend(utc);
-dayjs.extend(timezone);
+dayjs.extend(duration)
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
-const defaultTimezone = "America/Edmonton";
+const defaultTimezone = 'America/Edmonton'
 
-function calculateTotalTime(
+const ROUND_TO_NEAREST_MINUTES = 15
+
+const calculateTotalTime = (
   startDatetimeString: string,
   endDatetimeString: string
-): string {
-  const startDatetime = dayjs(startDatetimeString).tz(defaultTimezone);
-  const endDatetime = dayjs(endDatetimeString).tz(defaultTimezone);
+): string => {
+  const startDatetime = dayjs(startDatetimeString).tz(defaultTimezone)
+  const endDatetime = dayjs(endDatetimeString).tz(defaultTimezone)
 
   if (!startDatetime.isValid()) {
-    throw new TimeeyError(
-      "INVALID_DATE",
-      `Start datetime: '${startDatetimeString}' is invalid`,
-      StatusCodes.BAD_REQUEST
-    );
+    throw new TimeeyError({
+      type: ErrorType.INVALID_DATE,
+      message: `Start datetime: '${startDatetimeString}' is invalid`,
+      code: StatusCode.BAD_REQUEST,
+    })
   }
 
   if (!endDatetime.isValid()) {
-    throw new TimeeyError(
-      "INVALID_DATE",
-      `End datetime: '${endDatetimeString}' is invalid`,
-      StatusCodes.BAD_REQUEST
-    );
+    throw new TimeeyError({
+      type: ErrorType.INVALID_DATE,
+      message: `End datetime: '${endDatetimeString}' is invalid`,
+      code: StatusCode.BAD_REQUEST,
+    })
   }
 
   if (endDatetime.isBefore(startDatetime)) {
-    throw TimeeyError.fromObject({
-      type: "INVALID_DATE",
+    throw new TimeeyError({
+      type: ErrorType.INVALID_DATE,
       message: `End datetime: '${endDatetimeString}' must be after start datetime: '${startDatetimeString}'`,
-      code: StatusCodes.BAD_REQUEST,
+      code: StatusCode.BAD_REQUEST,
       data: {
         startDatetime: startDatetimeString,
         endDatetime: endDatetimeString,
       },
-    });
+    })
   }
 
-  const startDate = startDatetime.format("YYYY-MM-DD");
-  const endDate = endDatetime.format("YYYY-MM-DD");
+  const startDate = startDatetime.format('YYYY-MM-DD')
+  const endDate = endDatetime.format('YYYY-MM-DD')
 
   if (startDate !== endDate) {
-    throw new TimeeyError(
-      "INVALID_DATE",
-      `Start Date: '${startDate}' and End Date: '${endDate}' must be the same`,
-      StatusCodes.BAD_REQUEST
-    );
+    throw new TimeeyError({
+      type: ErrorType.INVALID_DATE,
+      message: `Start Date: '${startDate}' and End Date: '${endDate}' must be the same`,
+      code: StatusCode.BAD_REQUEST,
+    })
   }
 
-  const duration = calculateRoundedDuration(startDatetime, endDatetime);
-  const totalTime = duration.format("HH:mm");
+  const duration = calculateRoundedDuration(startDatetime, endDatetime)
+  const totalTime = duration.format('HH:mm')
 
-  return totalTime;
+  return totalTime
 }
 
-function calculateRoundedDuration(
+const calculateRoundedDuration = (
   startDatetime: Dayjs,
   endDatetime: Dayjs
-): Duration {
-  const duration = dayjs.duration(endDatetime.diff(startDatetime));
-  return roundDurationToNearestMinutes(duration, 15);
+): Duration => {
+  const duration = dayjs.duration(endDatetime.diff(startDatetime))
+  return roundDurationToNearestMinutes(duration, ROUND_TO_NEAREST_MINUTES)
 }
 
-function roundDurationToNearestMinutes(
+const roundDurationToNearestMinutes = (
   duration: Duration,
   roundMinutes: number
-): Duration {
-  const minutes = duration.minutes();
+): Duration => {
+  const minutes = duration.minutes()
 
-  const remainder = minutes % roundMinutes;
+  const remainder = minutes % roundMinutes
 
   if (remainder >= Math.floor(roundMinutes / 2)) {
-    return duration.add(roundMinutes - remainder, "minutes");
+    return duration.add(roundMinutes - remainder, 'minutes')
   } else {
-    return duration.subtract(remainder, "minutes");
+    return duration.subtract(remainder, 'minutes')
   }
 }
 
-export default calculateTotalTime;
+export default calculateTotalTime
