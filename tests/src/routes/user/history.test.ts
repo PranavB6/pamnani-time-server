@@ -23,7 +23,7 @@ const userC: UserCredentials = {
   password: 'password-c',
 }
 
-const historyUrl = '/api/v1/user/history'
+const historyUrl = '/api/v2/user/history'
 
 describe('GET /user/history', function () {
   let googleSheetsDatabaseSimulator: GoogleSheetsDatabaseSimulator

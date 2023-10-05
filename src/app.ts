@@ -25,9 +25,9 @@ const createApp = (): Express => {
     )
   )
 
-  app.use('/api/v1/verify-credentials', verifyCredentialsRouter)
-  app.use('/api/v1/users', usersRouter)
-  app.use('/api/v1/user', userRouter)
+  app.use('/api/v2/verify-credentials', verifyCredentialsRouter)
+  app.use('/api/v2/users', usersRouter)
+  app.use('/api/v2/user', userRouter)
 
   app.use(errorMiddleware)
 

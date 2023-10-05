@@ -5,7 +5,7 @@ import supertest from 'supertest'
 import createApp from '../../../src/app'
 import GoogleSheetsDatabaseSimulator from '../../mocks/googleSheetsDatabaseSimulator'
 
-const verifyCredentialsUrl = '/api/v1/verify-credentials'
+const verifyCredentialsUrl = '/api/v2/verify-credentials'
 
 const validUser = {
   username: 'Username A',
