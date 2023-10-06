@@ -11,11 +11,19 @@
     "lint:fix": "eslint src/**/* --fix",
     "format": "prettier --write --ignore-unknown .",
     "format:check": "prettier --check .",
-    "test": "npm run build && mocha --file dist/tests/setupTests.js dist/tests/**/*.test.js",
+    "test": "pnpm run build && mocha --file dist/tests/setupTests.js dist/tests/**/*.test.js",
     "test:dev": "mocha -r ts-node/register 'tests/**/*.ts' --watch --watch-files 'src/**/*,tests/**/*'",
     "prepare": "husky install",
-    "pre-commit": "npm run lint:fix && npm run format",
-    "pre-push": "npm run test"
+    "pre-commit": "lint-staged",
+    "pre-push": "pnpm run test"
+  },
+  "lint-staged": {
+    "*": [
+      "prettier --write --ignore-unknown"
+    ],
+    "*.{js,ts}": [
+      "eslint --fix"
+    ]
   },
   "keywords": [],
   "author": "",
@@ -55,6 +63,7 @@
     "eslint-plugin-n": "^15.0.0 || ^16.0.0 ",
     "eslint-plugin-promise": "^6.0.0",
     "husky": "^8.0.0",
+    "lint-staged": "^14.0.1",
     "mocha": "^10.2.0",
     "prettier": "^3.0.3",
     "sinon": "^16.0.0",

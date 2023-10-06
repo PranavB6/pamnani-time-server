@@ -38,7 +38,7 @@ const shouldEnableGoogleCloudLogger = (): boolean => {
   }
 
   console.log('🫡 Google Cloud logger will not be silenced!')
-  return false
+  return true
 }
 
 const logger = winston.createLogger({
