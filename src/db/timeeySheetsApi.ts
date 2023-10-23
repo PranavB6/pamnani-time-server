@@ -11,9 +11,9 @@ import { isClockedInRecord } from '../models/timesheetRecord'
 import type UserCredentials from '../models/userCredentials'
 
 const loginSheetRange = 'Login Info!A:B'
-const timesheetRange = 'Timesheet 2!A:H'
+const timesheetRange = 'Timesheet!A:H'
 const calcTimesheetRowRange = (index: number): string =>
-  `Timesheet 2!A${index}:H${index}`
+  `Timesheet!A${index}:H${index}`
 
 const createParsingError = (
   error: unknown,
