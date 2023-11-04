@@ -83,7 +83,7 @@ const roundDurationToNearestMinutes = (
 
   const remainder = minutes % roundMinutes
 
-  if (remainder >= Math.floor(roundMinutes / 2)) {
+  if (remainder > Math.floor(roundMinutes / 2)) {
     return duration.add(roundMinutes - remainder, 'minutes')
   } else {
     return duration.subtract(remainder, 'minutes')

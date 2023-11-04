@@ -80,6 +80,18 @@ class TimesheetRecordCreator {
     return this
   }
 
+  clockInWithStartDatetime(
+    username: string,
+    startDatetime: string
+  ): TimesheetRecordCreator {
+    this.record.id = uuidv4()
+    this.record.username = username
+    this.record.startDatetime = startDatetime
+    this.record.status = 'CLOCKED IN'
+
+    return this
+  }
+
   clockOut(): TimesheetRecordCreator {
     if (this.endDatetime == null) {
       throw new Error('Cannot clock out without clocking in')
